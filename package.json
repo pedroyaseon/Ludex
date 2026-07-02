@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "check:rust": "scripts\\cargo-check.cmd",
     "tauri": "tauri"
   },
   "dependencies": {

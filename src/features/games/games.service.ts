@@ -10,16 +10,22 @@ export interface GameQuery {
 const wait = (milliseconds = 180) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
+const normalizeForSearch = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("pt-BR");
+
 export const gamesService = {
   async list(query: GameQuery = {}): Promise<Game[]> {
     await wait();
-    const normalizedSearch = query.search?.trim().toLocaleLowerCase("pt-BR") ?? "";
+    const normalizedSearch = normalizeForSearch(query.search?.trim() ?? "");
 
     return mockGames.filter((game) => {
       const matchesSearch =
         !normalizedSearch ||
-        game.title.toLocaleLowerCase("pt-BR").includes(normalizedSearch) ||
-        game.genre?.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
+        normalizeForSearch(game.title).includes(normalizedSearch) ||
+        (game.genre ? normalizeForSearch(game.genre).includes(normalizedSearch) : false);
       const matchesPlatform =
         !query.platform || query.platform === "ALL" || game.platform === query.platform;
       const matchesFavorite = !query.favoritesOnly || game.isFavorite;
