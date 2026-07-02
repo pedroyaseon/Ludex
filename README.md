@@ -74,6 +74,7 @@ npm run dev:web
 | `npm run build:web`    | valida tipos e gera o bundle web                    |
 | `npm run lint`         | executa ESLint em todo o frontend                   |
 | `npm run typecheck`    | executa o compilador TypeScript sem emitir arquivos |
+| `npm run check:rust`   | valida o crate Tauri no ambiente MSVC do Windows    |
 | `npm run format`       | formata o projeto com Prettier                      |
 | `npm run format:check` | verifica formatação sem alterar arquivos            |
 
