@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840">
+  <defs><linearGradient id="v" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#070b18"/><stop offset=".52" stop-color="#142e53"/><stop offset="1" stop-color="#d63f45"/></linearGradient></defs>
+  <rect width="600" height="840" fill="url(#v)"/><path d="M-50 540 650 188M-70 650 630 298M-40 770 660 418" stroke="#fff" stroke-width="5" opacity=".14"/>
+  <path d="m90 510 77-112 231-53 109 72 39 112-65 50H139z" fill="#080c14"/><path d="m183 397 74-72h151l70 91-175 2z" fill="#98d9ff" opacity=".5"/><circle cx="177" cy="560" r="62" fill="#05070b" stroke="#758297" stroke-width="12"/><circle cx="458" cy="560" r="62" fill="#05070b" stroke="#758297" stroke-width="12"/>
+  <text x="45" y="75" fill="#d9eaff" font-family="sans-serif" font-size="22" letter-spacing="6">THE REAL DRIVING SIMULATOR</text><text x="43" y="714" fill="#fff" font-family="sans-serif" font-size="57" font-weight="800">GRAN TURISMO</text><text x="45" y="783" fill="#e25459" font-family="sans-serif" font-size="72" font-weight="800">4</text>
+</svg>
+

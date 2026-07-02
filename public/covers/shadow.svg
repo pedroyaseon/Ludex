@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840">
+  <defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1a3046"/><stop offset=".55" stop-color="#315b6b"/><stop offset="1" stop-color="#c1a47c"/></linearGradient><radialGradient id="s"><stop stop-color="#f6e5bb"/><stop offset="1" stop-color="#f6e5bb" stop-opacity="0"/></radialGradient></defs>
+  <rect width="600" height="840" fill="url(#b)"/><circle cx="470" cy="170" r="230" fill="url(#s)" opacity=".8"/>
+  <path d="M0 570 140 420l93 66 96-204 97 209 80-72 94 116v305H0z" fill="#0a1119" opacity=".88"/><path d="M355 335h46v357h-46zM325 368h107v24H325z" fill="#070b10"/>
+  <path d="M131 681h12v66h-12zM116 702h42v9h-42z" fill="#efe4d1"/>
+  <text x="46" y="75" fill="#fff" font-family="serif" font-size="22" letter-spacing="6">LUDEX ARCHIVE</text><text x="42" y="750" fill="#fff" font-family="serif" font-size="53" font-weight="700">SHADOW</text><text x="45" y="797" fill="#e8dac6" font-family="sans-serif" font-size="21" letter-spacing="9">OF THE COLOSSUS</text>
+</svg>
+

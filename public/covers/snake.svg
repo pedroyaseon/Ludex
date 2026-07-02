@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840">
+  <defs><linearGradient id="s" x2="1" y2="1"><stop stop-color="#08120e"/><stop offset=".55" stop-color="#2d4b30"/><stop offset="1" stop-color="#a39a5e"/></linearGradient><pattern id="p" width="65" height="65" patternUnits="userSpaceOnUse"><path d="M0 30 30 0h20L0 50zm15 35 50-50v22L37 65z" stroke="#d9d0a0" stroke-width="5" opacity=".09"/></pattern></defs>
+  <rect width="600" height="840" fill="url(#s)"/><rect width="600" height="840" fill="url(#p)"/><path d="M183 657c-5-192 59-324 193-397l61 26-22 102-61 83 30 186z" fill="#08100d" opacity=".77"/><path d="m293 284 68-111 84 75-34 81z" fill="#d1b790" opacity=".52"/><path d="M0 705h600v135H0z" fill="#06100c" opacity=".9"/>
+  <text x="45" y="70" fill="#e8e3c8" font-family="monospace" font-size="20" letter-spacing="7">TACTICAL ESPIONAGE ACTION</text><text x="42" y="747" fill="#fff" font-family="sans-serif" font-size="45" font-weight="800">METAL GEAR SOLID</text><text x="44" y="804" fill="#c7c08b" font-family="sans-serif" font-size="42" font-weight="900" letter-spacing="15">3</text>
+</svg>
+
