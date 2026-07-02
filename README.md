@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Esta é a fundação do produto (`v0.1.0`). A interface, os tipos de domínio e as fronteiras de serviço estão implementados com dados mockados. Nesta etapa, o Ludex **não** lê pastas reais, persiste em SQLite ou inicia emuladores.
+Esta é a fundação do produto (`v0.2.0`). A interface e os tipos de domínio usam jogos mockados, enquanto as preferências do aplicativo já são persistidas localmente em SQLite. Nesta etapa, o Ludex **não** lê pastas reais nem inicia emuladores.
 
 ### Disponível nesta entrega
 
@@ -20,7 +20,8 @@ Esta é a fundação do produto (`v0.1.0`). A interface, os tipos de domínio e 
 - biblioteca mockada de PS2, busca e filtros;
 - detalhes do jogo e ação de jogar demonstrativa;
 - fluxo visual de importação com scanner mockado;
-- configurações locais em memória para PCSX2;
+- configurações persistidas localmente em SQLite;
+- descoberta e validação nativa do executável PCSX2;
 - adapters de emulador para PCSX2 e RPCS3;
 - módulos Rust preparados para scanner, launcher e commands;
 - validações automatizadas de lint, formato, tipos e builds.
@@ -34,8 +35,8 @@ Esta é a fundação do produto (`v0.1.0`). A interface, os tipos de domínio e 
 | Linguagem    | TypeScript                    | domínio e frontend estritamente tipados         |
 | Build        | Vite                          | ambiente de desenvolvimento e bundle web        |
 | Estilo       | Tailwind CSS 4                | design system e layout responsivo               |
-| Nativo       | Rust                          | futuros commands, scanner e launcher            |
-| Persistência | SQLite (futuro)               | biblioteca, configurações e sessões locais      |
+| Nativo       | Rust                          | commands locais e futuro scanner/launcher       |
+| Persistência | SQLite                        | configurações e futuro catálogo local           |
 
 ## Como rodar localmente
 
@@ -75,6 +76,7 @@ npm run dev:web
 | `npm run lint`         | executa ESLint em todo o frontend                   |
 | `npm run typecheck`    | executa o compilador TypeScript sem emitir arquivos |
 | `npm run check:rust`   | valida o crate Tauri no ambiente MSVC do Windows    |
+| `npm run test:rust`    | executa os testes unitários da camada Rust          |
 | `npm run format`       | formata o projeto com Prettier                      |
 | `npm run format:check` | verifica formatação sem alterar arquivos            |
 
@@ -104,15 +106,17 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 
 ### Fase 2 — Biblioteca local
 
-- [ ] schema e migrations SQLite;
-- [ ] commands Tauri tipados;
+- [x] schema e migrations SQLite;
+- [x] persistência das configurações do aplicativo;
+- [x] descoberta e validação do executável PCSX2;
+- [x] commands Tauri tipados para configurações;
 - [ ] scanner real e incremental de PS2;
 - [ ] deduplicação e tratamento de arquivos `.bin/.cue`;
-- [ ] persistência de pastas e configurações.
+- [ ] persistência e gerenciamento de pastas da biblioteca.
 
 ### Fase 3 — Launcher
 
-- [ ] descoberta/configuração do PCSX2;
+- [x] descoberta/configuração persistente do PCSX2;
 - [ ] composição segura de argumentos;
 - [ ] perfis por jogo;
 - [ ] sessões e cálculo de tempo jogado;
@@ -147,7 +151,7 @@ Ludex/
 │   │   ├── emulators/          # adapters PCSX2/RPCS3
 │   │   ├── library-scanner/    # contrato do scanner
 │   │   ├── metadata/           # provider mockado
-│   │   └── settings/           # preferências em memória
+│   │   └── settings/           # gateway de preferências locais
 │   ├── lib/                    # utilitários sem regra de negócio
 │   ├── pages/                  # telas roteadas
 │   ├── routes/                 # definição de rotas
@@ -155,12 +159,14 @@ Ludex/
 └── src-tauri/
     ├── capabilities/           # permissões Tauri
     └── src/
+        ├── database/           # conexão, migrations e repositories SQLite
+        ├── emulators/          # descoberta e validação nativa
         ├── commands/           # API entre frontend e Rust
         ├── scanner/            # futura leitura do filesystem
         └── launcher/           # futura execução de emuladores
 ```
 
-As implementações mockadas devem preservar os contratos públicos. Assim, a troca por repositories SQLite e commands Tauri não exige reescrever páginas e componentes.
+Os jogos ainda usam implementações mockadas que preservam os contratos públicos. As configurações já atravessam commands Tauri e um repository SQLite, validando o padrão arquitetural para a futura migração do catálogo.
 
 ## Versionamento e colaboração
 

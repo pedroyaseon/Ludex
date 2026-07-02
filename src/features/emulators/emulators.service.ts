@@ -1,5 +1,6 @@
 import { Pcsx2Adapter } from "@/features/emulators/pcsx2.adapter";
 import { Rpcs3Adapter } from "@/features/emulators/rpcs3.adapter";
+import { settingsService } from "@/features/settings/settings.service";
 import type { Emulator, Platform } from "@/types/domain";
 
 const now = "2026-06-01T12:00:00.000Z";
@@ -9,7 +10,6 @@ const emulators: Emulator[] = [
     id: "pcsx2-default",
     name: "PCSX2",
     platform: "PS2",
-    executablePath: "C:/Emulators/PCSX2/pcsx2-qt.exe",
     defaultArgs: "--nogui",
     isDefault: true,
     createdAt: now,
@@ -32,11 +32,25 @@ const adapters = {
 
 export const emulatorsService = {
   async list(): Promise<Emulator[]> {
-    return structuredClone(emulators);
+    const settings = await settingsService.get();
+    return emulators.map((emulator) => ({
+      ...structuredClone(emulator),
+      executablePath: settings.emulatorPaths[emulator.platform],
+    }));
   },
 
   async getDefault(platform: Platform): Promise<Emulator | undefined> {
-    return emulators.find((emulator) => emulator.platform === platform && emulator.isDefault);
+    const settings = await settingsService.get();
+    const emulator = emulators.find(
+      (candidate) => candidate.platform === platform && candidate.isDefault,
+    );
+
+    return emulator
+      ? {
+          ...structuredClone(emulator),
+          executablePath: settings.emulatorPaths[platform],
+        }
+      : undefined;
   },
 
   getAdapter(platform: Platform) {
