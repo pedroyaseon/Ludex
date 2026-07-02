@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840">
+  <defs><filter id="w"><feTurbulence baseFrequency=".025" numOctaves="3"/><feDisplacementMap in="SourceGraphic" scale="12"/></filter><radialGradient id="r"><stop stop-color="#f5bd45"/><stop offset=".54" stop-color="#e33c29"/><stop offset="1" stop-color="#b31620" stop-opacity="0"/></radialGradient></defs>
+  <rect width="600" height="840" fill="#eadfc4"/><circle cx="420" cy="240" r="194" fill="url(#r)"/><path d="M0 570q80-100 145-8t130-9q65-100 135-7t190-22v316H0z" fill="#132c33" opacity=".92"/>
+  <path d="M162 541c63-105 135-160 215-166l92 69-71 50-31 111-92 11-61-53z" fill="#f5f0df" stroke="#252016" stroke-width="11" filter="url(#w)"/><path d="m340 396 28-107 46 116" fill="#e3412d" stroke="#252016" stroke-width="8"/>
+  <text x="45" y="74" fill="#33261e" font-family="serif" font-size="21" letter-spacing="7">CELESTIAL BRUSH</text><text x="43" y="742" fill="#fff" font-family="serif" font-size="93" font-weight="700">ŌKAMI</text><text x="46" y="793" fill="#e8c891" font-family="sans-serif" font-size="18" letter-spacing="9">RESTORE THE LIGHT</text>
+</svg>
