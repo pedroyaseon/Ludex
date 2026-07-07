@@ -13,11 +13,18 @@ export function Home() {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<PlatformSelection>("ALL");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const { games, isLoading, isSyncing, syncError, lastSyncResult, refresh } = useGames({
-    search,
-    platform,
-    favoritesOnly,
-  });
+  const { games, isLoading, isSyncing, syncError, lastSyncResult, libraryState, refresh } =
+    useGames({
+      search,
+      platform,
+      favoritesOnly,
+    });
+  const lastSyncedAt = libraryState.lastSyncedAt
+    ? new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(new Date(libraryState.lastSyncedAt))
+    : undefined;
 
   return (
     <div className="relative min-h-screen overflow-hidden px-5 py-7 sm:px-8 md:px-10 md:py-9 xl:px-12">
@@ -69,9 +76,38 @@ export function Home() {
                 ? syncError
                 : isSyncing
                   ? "Detectando jogos automaticamente na pasta configurada..."
-                  : `${lastSyncResult?.scanResult.files.length ?? 0} jogos detectados automaticamente em ${lastSyncResult?.scanResult.request.folderPath ?? "sua pasta PS2"}.`}
+                  : `${lastSyncResult?.scanResult.files.length ?? 0} jogos detectados automaticamente em ${lastSyncResult?.scanResult.request.folderPath ?? "sua pasta PS2"}. ${lastSyncResult?.stats.removed ? `${lastSyncResult.stats.removed} removidos da biblioteca local porque não existem mais na pasta.` : ""}`}
             </span>
           </div>
+        )}
+
+        <section className="mt-6 grid gap-3 md:grid-cols-4" aria-label="Status da biblioteca">
+          {[
+            { label: "Indexados", value: libraryState.totalGames.toString() },
+            { label: "Adicionados", value: String(libraryState.lastSyncStats?.added ?? 0) },
+            { label: "Atualizados", value: String(libraryState.lastSyncStats?.updated ?? 0) },
+            { label: "Removidos", value: String(libraryState.lastSyncStats?.removed ?? 0) },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4"
+            >
+              <p className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase">
+                {item.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">{item.value}</p>
+            </div>
+          ))}
+        </section>
+
+        {(lastSyncedAt || libraryState.lastScannedFolderPath) && (
+          <p className="mt-3 text-[11px] text-zinc-700">
+            {lastSyncedAt ? `Última sincronização: ${lastSyncedAt}` : "Biblioteca sincronizada"}{" "}
+            {libraryState.lastScannedFolderPath ? `· ${libraryState.lastScannedFolderPath}` : ""}
+            {libraryState.lastScanDurationMilliseconds
+              ? ` · ${libraryState.lastScanDurationMilliseconds} ms`
+              : ""}
+          </p>
         )}
 
         <section

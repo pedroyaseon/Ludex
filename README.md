@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.3.1`.
+Versão: `v0.4.0`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -22,9 +22,11 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - configuração local do caminho do PCSX2;
 - launcher nativo para abrir jogos PS2 com PCSX2;
 - detecção automática da pasta PS2 configurada ao abrir a biblioteca;
+- painel de status da biblioteca com total indexado, última sincronização e contadores de mudanças;
+- limpeza segura do índice local sem apagar arquivos de jogos;
 - validações de caminho, extensão e execução sem shell.
 
-Ainda não há SQLite, scanner incremental, metadados reais, download de capas, backend cloud ou suporte real a PS3.
+Ainda não há SQLite, scanner incremental avançado, metadados reais, download de capas, backend cloud ou suporte real a PS3. A biblioteca permanece em `localStorage` nesta versão.
 
 ## Stack
 
@@ -160,6 +162,14 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] configuração da pasta PS2 nas preferências;
 - [x] importação salva a pasta como origem automática;
 - [x] feedback visual de sincronização e erros do scanner.
+
+### v0.4.0 — Gestão local da biblioteca
+
+- [x] manter a biblioteca em `localStorage` enquanto SQLite fica fora do escopo imediato;
+- [x] gravar estado local de sincronização separado da lista de jogos;
+- [x] exibir total indexado, adicionados, atualizados e removidos na Home;
+- [x] exibir última pasta sincronizada e duração da varredura;
+- [x] permitir limpar o índice local sem remover arquivos originais.
 
 ### Próximas versões
 

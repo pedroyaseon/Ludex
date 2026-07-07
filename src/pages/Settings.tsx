@@ -1,6 +1,17 @@
-import { Check, FolderOpen, Gamepad2, Globe2, Monitor, Save, ShieldCheck } from "lucide-react";
+import {
+  Check,
+  Database,
+  FolderOpen,
+  Gamepad2,
+  Globe2,
+  Monitor,
+  Save,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { gamesService, type LibraryState } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 import type { AppSettings } from "@/features/settings/settings.types";
 
@@ -13,11 +24,14 @@ const sections = [
 
 export function Settings() {
   const [settings, setSettings] = useState<AppSettings>();
+  const [libraryState, setLibraryState] = useState<LibraryState>({ totalGames: 0 });
   const [activeSection, setActiveSection] = useState("library");
   const [saved, setSaved] = useState(false);
+  const [libraryCleared, setLibraryCleared] = useState(false);
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
+    void gamesService.getLibraryState().then(setLibraryState);
   }, []);
 
   async function handleSave() {
@@ -25,6 +39,13 @@ export function Settings() {
     setSettings(await settingsService.update(settings));
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
+  }
+
+  async function handleClearLibrary() {
+    await gamesService.clear();
+    setLibraryState({ totalGames: 0 });
+    setLibraryCleared(true);
+    window.setTimeout(() => setLibraryCleared(false), 1800);
   }
 
   if (!settings) return <div className="min-h-screen animate-pulse bg-white/[0.015]" />;
@@ -63,95 +84,125 @@ export function Settings() {
 
           <div className="min-w-0">
             {activeSection === "library" && (
-              <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold text-white">Biblioteca PS2</h2>
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Configure a pasta monitorada para detecção automática de jogos locais.
-                    </p>
-                  </div>
-                  <span className="rounded-lg border border-brand-300/10 bg-brand-400/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-wider text-brand-200 uppercase">
-                    Auto-scan
-                  </span>
-                </div>
-
-                <div className="mt-7 space-y-5">
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                      Pasta de ISOs PS2
+              <div className="space-y-5">
+                <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-semibold text-white">Biblioteca PS2</h2>
+                      <p className="mt-1 text-xs text-zinc-600">
+                        Configure a pasta monitorada para detecção automática de jogos locais.
+                      </p>
+                    </div>
+                    <span className="rounded-lg border border-brand-300/10 bg-brand-400/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-wider text-brand-200 uppercase">
+                      Auto-scan
                     </span>
-                    <input
-                      value={settings.libraryFolders.PS2?.folderPath ?? ""}
-                      onChange={(event) =>
-                        setSettings({
-                          ...settings,
-                          libraryFolders: {
-                            ...settings.libraryFolders,
-                            PS2: {
-                              folderPath: event.target.value,
-                              recursiveScan: settings.libraryFolders.PS2?.recursiveScan ?? true,
-                              autoScan: settings.libraryFolders.PS2?.autoScan ?? true,
-                            },
-                          },
-                        })
-                      }
-                      className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 font-mono text-[11px] text-zinc-400 outline-none focus:border-brand-400/30"
-                      placeholder="F:\ISOs PS2"
-                    />
-                    <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-                      Ao abrir a Home, o Ludex escaneia essa pasta e atualiza a biblioteca local.
-                    </p>
-                  </label>
+                  </div>
 
-                  {[
-                    {
-                      key: "autoScan" as const,
-                      title: "Detectar jogos automaticamente",
-                      description: "Escaneia a pasta configurada ao abrir a biblioteca.",
-                    },
-                    {
-                      key: "recursiveScan" as const,
-                      title: "Incluir subpastas",
-                      description: "Procura ISOs e imagens PS2 em toda a árvore de diretórios.",
-                    },
-                  ].map((item) => (
-                    <label
-                      key={item.key}
-                      className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-black/10 p-4"
-                    >
-                      <span>
-                        <span className="block text-xs font-semibold text-zinc-300">
-                          {item.title}
-                        </span>
-                        <span className="mt-1 block text-[10px] text-zinc-600">
-                          {item.description}
-                        </span>
+                  <div className="mt-7 space-y-5">
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
+                        Pasta de ISOs PS2
                       </span>
                       <input
-                        type="checkbox"
-                        checked={settings.libraryFolders.PS2?.[item.key] ?? true}
+                        value={settings.libraryFolders.PS2?.folderPath ?? ""}
                         onChange={(event) =>
                           setSettings({
                             ...settings,
                             libraryFolders: {
                               ...settings.libraryFolders,
                               PS2: {
-                                folderPath: settings.libraryFolders.PS2?.folderPath ?? "",
+                                folderPath: event.target.value,
                                 recursiveScan: settings.libraryFolders.PS2?.recursiveScan ?? true,
                                 autoScan: settings.libraryFolders.PS2?.autoScan ?? true,
-                                [item.key]: event.target.checked,
                               },
                             },
                           })
                         }
-                        className="peer sr-only"
+                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 font-mono text-[11px] text-zinc-400 outline-none focus:border-brand-400/30"
+                        placeholder="F:\ISOs PS2"
                       />
-                      <span className="relative h-6 w-11 rounded-full bg-zinc-800 after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-brand-500 peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                      <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+                        Ao abrir a Home, o Ludex escaneia essa pasta e atualiza a biblioteca local.
+                      </p>
                     </label>
-                  ))}
-                </div>
-              </section>
+
+                    {[
+                      {
+                        key: "autoScan" as const,
+                        title: "Detectar jogos automaticamente",
+                        description: "Escaneia a pasta configurada ao abrir a biblioteca.",
+                      },
+                      {
+                        key: "recursiveScan" as const,
+                        title: "Incluir subpastas",
+                        description: "Procura ISOs e imagens PS2 em toda a árvore de diretórios.",
+                      },
+                    ].map((item) => (
+                      <label
+                        key={item.key}
+                        className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-black/10 p-4"
+                      >
+                        <span>
+                          <span className="block text-xs font-semibold text-zinc-300">
+                            {item.title}
+                          </span>
+                          <span className="mt-1 block text-[10px] text-zinc-600">
+                            {item.description}
+                          </span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={settings.libraryFolders.PS2?.[item.key] ?? true}
+                          onChange={(event) =>
+                            setSettings({
+                              ...settings,
+                              libraryFolders: {
+                                ...settings.libraryFolders,
+                                PS2: {
+                                  folderPath: settings.libraryFolders.PS2?.folderPath ?? "",
+                                  recursiveScan: settings.libraryFolders.PS2?.recursiveScan ?? true,
+                                  autoScan: settings.libraryFolders.PS2?.autoScan ?? true,
+                                  [item.key]: event.target.checked,
+                                },
+                              },
+                            })
+                          }
+                          className="peer sr-only"
+                        />
+                        <span className="relative h-6 w-11 rounded-full bg-zinc-800 after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-brand-500 peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                      </label>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-4">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/[0.04] text-zinc-400">
+                        <Database size={19} />
+                      </span>
+                      <div>
+                        <h2 className="text-base font-semibold text-white">
+                          Manutenção da biblioteca
+                        </h2>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
+                          {libraryState.totalGames} jogos indexados no armazenamento local. Limpar
+                          remove apenas o índice do Ludex; suas ISOs permanecem intactas.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleClearLibrary()}
+                      disabled={libraryState.totalGames === 0}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/15 bg-rose-400/[0.07] px-4 text-xs font-semibold text-rose-100/80 hover:bg-rose-400/[0.11] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {libraryCleared ? <Check size={16} /> : <Trash2 size={16} />}
+                      {libraryCleared ? "Biblioteca limpa" : "Limpar índice local"}
+                    </button>
+                  </div>
+                </section>
+              </div>
             )}
 
             {activeSection === "emulators" && (

@@ -12,6 +12,25 @@ export interface GameQuery {
 export interface LibrarySyncResult {
   scanResult: ScanResult;
   games: Game[];
+  state: LibraryState;
+  stats: LibrarySyncStats;
+}
+
+export interface LibrarySyncStats {
+  added: number;
+  updated: number;
+  removed: number;
+  total: number;
+}
+
+export interface LibraryState {
+  totalGames: number;
+  lastSyncedAt?: string;
+  lastScannedFolderPath?: string;
+  lastScannedPlatform?: Platform;
+  lastScanDurationMilliseconds?: number;
+  lastIgnoredCount?: number;
+  lastSyncStats?: LibrarySyncStats;
 }
 
 interface ImportScanOptions {
@@ -19,6 +38,7 @@ interface ImportScanOptions {
 }
 
 const libraryStorageKey = "ludex.library.games.v1";
+const libraryStateStorageKey = "ludex.library.state.v1";
 
 const wait = (milliseconds = 180) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
@@ -43,6 +63,30 @@ const readStoredGames = (): Game[] => {
 
 const writeStoredGames = (games: Game[]) => {
   window.localStorage.setItem(libraryStorageKey, JSON.stringify(games));
+};
+
+const readLibraryState = (): LibraryState => {
+  const rawValue = window.localStorage.getItem(libraryStateStorageKey);
+  if (!rawValue) return { totalGames: readStoredGames().length };
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as Partial<LibraryState>;
+    return {
+      totalGames: parsedValue.totalGames ?? readStoredGames().length,
+      lastSyncedAt: parsedValue.lastSyncedAt,
+      lastScannedFolderPath: parsedValue.lastScannedFolderPath,
+      lastScannedPlatform: parsedValue.lastScannedPlatform,
+      lastScanDurationMilliseconds: parsedValue.lastScanDurationMilliseconds,
+      lastIgnoredCount: parsedValue.lastIgnoredCount,
+      lastSyncStats: parsedValue.lastSyncStats,
+    };
+  } catch {
+    return { totalGames: readStoredGames().length };
+  }
+};
+
+const writeLibraryState = (state: LibraryState) => {
+  window.localStorage.setItem(libraryStateStorageKey, JSON.stringify(state));
 };
 
 const normalizePathForCompare = (path: string) =>
@@ -128,7 +172,10 @@ export const gamesService = {
     return readStoredGames().find((game) => game.id === id);
   },
 
-  async importScanResult(result: ScanResult, options: ImportScanOptions = {}): Promise<Game[]> {
+  async importScanResult(
+    result: ScanResult,
+    options: ImportScanOptions = {},
+  ): Promise<LibrarySyncResult> {
     await wait(120);
     const existingGames = readStoredGames();
     const existingByPath = new Map(
@@ -140,18 +187,44 @@ export const gamesService = {
     const importedPaths = new Set(
       importedGames.map((game) => game.filePath.toLocaleLowerCase("pt-BR")),
     );
-    const manuallyKeptGames = existingGames.filter(
-      (game) =>
-        !importedPaths.has(game.filePath.toLocaleLowerCase("pt-BR")) &&
-        (!options.pruneMissingFromSource ||
-          game.platform !== result.request.platform ||
-          !isInsideFolder(game.filePath, result.request.folderPath)),
-    );
+    const removedGames: Game[] = [];
+    const manuallyKeptGames = existingGames.filter((game) => {
+      const isImported = importedPaths.has(game.filePath.toLocaleLowerCase("pt-BR"));
+      const isPruneCandidate =
+        options.pruneMissingFromSource &&
+        game.platform === result.request.platform &&
+        isInsideFolder(game.filePath, result.request.folderPath);
+
+      if (!isImported && isPruneCandidate) {
+        removedGames.push(game);
+      }
+
+      return !isImported && !isPruneCandidate;
+    });
     const nextGames = [...importedGames, ...manuallyKeptGames];
+    const importedExistingCount = importedGames.filter((game) =>
+      existingByPath.has(game.filePath.toLocaleLowerCase("pt-BR")),
+    ).length;
+    const stats: LibrarySyncStats = {
+      added: importedGames.length - importedExistingCount,
+      updated: importedExistingCount,
+      removed: removedGames.length,
+      total: nextGames.length,
+    };
+    const state: LibraryState = {
+      totalGames: nextGames.length,
+      lastSyncedAt: new Date().toISOString(),
+      lastScannedFolderPath: result.request.folderPath,
+      lastScannedPlatform: result.request.platform,
+      lastScanDurationMilliseconds: result.durationMilliseconds,
+      lastIgnoredCount: result.ignoredCount,
+      lastSyncStats: stats,
+    };
 
     writeStoredGames(nextGames);
+    writeLibraryState(state);
 
-    return nextGames;
+    return { scanResult: result, games: nextGames, state, stats };
   },
 
   async syncConfiguredLibrary(platform: Platform = "PS2"): Promise<LibrarySyncResult | undefined> {
@@ -167,13 +240,17 @@ export const gamesService = {
       platform,
       recursive: libraryFolder.recursiveScan,
     });
-    const games = await this.importScanResult(scanResult, { pruneMissingFromSource: true });
+    return this.importScanResult(scanResult, { pruneMissingFromSource: true });
+  },
 
-    return { scanResult, games };
+  async getLibraryState(): Promise<LibraryState> {
+    await wait(60);
+    return readLibraryState();
   },
 
   async clear(): Promise<void> {
     await wait(80);
     window.localStorage.removeItem(libraryStorageKey);
+    window.localStorage.removeItem(libraryStateStorageKey);
   },
 };
