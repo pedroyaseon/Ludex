@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { launcherService } from "@/features/emulators/launcher.service";
 import { gamesService } from "@/features/games/games.service";
+import { settingsService } from "@/features/settings/settings.service";
 import { formatLastPlayed, formatPlaytime } from "@/lib/formatters";
 import type { Game } from "@/types/domain";
 
@@ -19,7 +21,9 @@ export function GameDetails() {
   const { gameId = "" } = useParams();
   const [game, setGame] = useState<Game>();
   const [isLoading, setIsLoading] = useState(true);
-  const [showLaunchNotice, setShowLaunchNotice] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [launchMessage, setLaunchMessage] = useState<string>();
+  const [launchMessageType, setLaunchMessageType] = useState<"success" | "error">("success");
 
   useEffect(() => {
     let isActive = true;
@@ -33,6 +37,31 @@ export function GameDetails() {
       isActive = false;
     };
   }, [gameId]);
+
+  async function handleLaunch() {
+    if (!game || isLaunching) return;
+
+    setIsLaunching(true);
+    setLaunchMessage(undefined);
+
+    try {
+      const settings = await settingsService.get();
+      const emulatorPath = settings.emulatorPaths[game.platform];
+
+      if (!emulatorPath) {
+        throw new Error("Configure o caminho do PCSX2 em Configurações antes de jogar.");
+      }
+
+      const result = await launcherService.launchGame({ emulatorPath, game });
+      setLaunchMessageType("success");
+      setLaunchMessage(`PCSX2 iniciado com sucesso. Processo ${result.processId}.`);
+    } catch (launchError) {
+      setLaunchMessageType("error");
+      setLaunchMessage(launchError instanceof Error ? launchError.message : String(launchError));
+    } finally {
+      setIsLaunching(false);
+    }
+  }
 
   if (isLoading) {
     return <div className="min-h-screen animate-pulse bg-white/[0.02]" />;
@@ -83,8 +112,13 @@ export function GameDetails() {
               {cover ? (
                 <img src={cover} alt={`Capa de ${game.title}`} className="size-full object-cover" />
               ) : (
-                <div className="grid size-full place-items-center text-6xl font-black text-white/10">
-                  {game.title[0]}
+                <div className="grid size-full place-items-center p-6 text-center">
+                  <div>
+                    <p className="text-6xl font-black text-white/10">{game.title[0]}</p>
+                    <p className="mt-4 text-xs font-semibold tracking-[0.2em] text-zinc-700 uppercase">
+                      Local PS2
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -108,10 +142,14 @@ export function GameDetails() {
               <span className="rounded-lg border border-brand-300/20 bg-brand-500/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.13em] text-brand-300 uppercase">
                 {game.platform}
               </span>
-              <span className="rounded-lg border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[10px] font-semibold text-zinc-500">
-                {game.region}
-              </span>
-              <span className="text-xs text-zinc-600">{game.releaseYear}</span>
+              {game.region && (
+                <span className="rounded-lg border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[10px] font-semibold text-zinc-500">
+                  {game.region}
+                </span>
+              )}
+              {game.releaseYear && (
+                <span className="text-xs text-zinc-600">{game.releaseYear}</span>
+              )}
             </div>
 
             <h1 className="mt-5 max-w-4xl text-4xl leading-[1.03] font-bold tracking-[-0.055em] text-white sm:text-5xl xl:text-6xl">
@@ -123,10 +161,11 @@ export function GameDetails() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => setShowLaunchNotice(true)}
-                className="inline-flex h-13 min-w-40 items-center justify-center gap-2.5 rounded-2xl bg-brand-500 px-6 text-sm font-bold text-white shadow-[0_16px_45px_rgba(139,77,255,.28)] transition-all hover:-translate-y-0.5 hover:bg-brand-400"
+                onClick={() => void handleLaunch()}
+                disabled={isLaunching}
+                className="inline-flex h-13 min-w-40 items-center justify-center gap-2.5 rounded-2xl bg-brand-500 px-6 text-sm font-bold text-white shadow-[0_16px_45px_rgba(139,77,255,.28)] transition-all hover:-translate-y-0.5 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Play size={18} fill="currentColor" /> Jogar
+                <Play size={18} fill="currentColor" /> {isLaunching ? "Abrindo..." : "Jogar"}
               </button>
               <div className="flex h-13 items-center gap-3 rounded-2xl border border-white/[0.075] bg-black/15 px-4 backdrop-blur-sm">
                 <span className="grid size-8 place-items-center rounded-lg bg-white/[0.05] text-zinc-400">
@@ -134,17 +173,34 @@ export function GameDetails() {
                 </span>
                 <div>
                   <p className="text-[10px] text-zinc-600">Emulador</p>
-                  <p className="text-xs font-semibold text-zinc-300">PCSX2 · Padrão</p>
+                  <p className="text-xs font-semibold text-zinc-300">PCSX2 · padrão</p>
                 </div>
                 <Check size={14} className="ml-2 text-emerald-400" />
               </div>
             </div>
 
-            {showLaunchNotice && (
-              <div className="mt-4 flex max-w-xl items-start gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.055] p-3.5 text-xs leading-relaxed text-amber-100/70">
-                <Info size={16} className="mt-0.5 shrink-0 text-amber-300" />A execução real será
-                conectada ao launcher nativo em uma etapa futura. O perfil do PCSX2 já está
-                representado na arquitetura.
+            {launchMessage && (
+              <div
+                className={`mt-4 flex max-w-xl items-start gap-3 rounded-xl border p-3.5 text-xs leading-relaxed ${
+                  launchMessageType === "success"
+                    ? "border-emerald-300/15 bg-emerald-300/[0.055] text-emerald-100/70"
+                    : "border-rose-300/15 bg-rose-300/[0.055] text-rose-100/75"
+                }`}
+              >
+                <Info
+                  size={16}
+                  className={`mt-0.5 shrink-0 ${
+                    launchMessageType === "success" ? "text-emerald-300" : "text-rose-300"
+                  }`}
+                />
+                <span>
+                  {launchMessage}
+                  {launchMessageType === "error" && (
+                    <Link to="/settings" className="ml-1 font-semibold underline">
+                      Abrir configurações.
+                    </Link>
+                  )}
+                </span>
               </div>
             )}
 

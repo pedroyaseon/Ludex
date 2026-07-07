@@ -9,7 +9,7 @@ const emulators: Emulator[] = [
     id: "pcsx2-default",
     name: "PCSX2",
     platform: "PS2",
-    executablePath: "C:/Emulators/PCSX2/pcsx2-qt.exe",
+    executablePath: "F:\\PCSX2",
     defaultArgs: "--nogui",
     isDefault: true,
     createdAt: now,

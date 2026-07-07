@@ -34,7 +34,7 @@ export function Settings() {
         <PageHeader
           eyebrow="Preferências"
           title="Configurações"
-          description="Ajuste emuladores e comportamento do aplicativo. Os dados desta preview permanecem apenas em memória."
+          description="Ajuste emuladores e comportamento do aplicativo. Nesta versão, as preferências ficam salvas localmente no desktop."
           actions={
             <button
               onClick={() => void handleSave()}
@@ -67,11 +67,11 @@ export function Settings() {
                   <div>
                     <h2 className="text-base font-semibold text-white">Emuladores</h2>
                     <p className="mt-1 text-xs text-zinc-600">
-                      Configure o executável usado para cada plataforma.
+                      Configure a pasta ou o executável usado para cada plataforma.
                     </p>
                   </div>
                   <span className="rounded-lg border border-emerald-300/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-wider text-emerald-300 uppercase">
-                    1 configurado
+                    PS2 ativo
                   </span>
                 </div>
                 <div className="mt-7 space-y-4">
@@ -82,13 +82,13 @@ export function Settings() {
                       </span>
                       <div>
                         <h3 className="text-sm font-semibold text-zinc-200">PCSX2</h3>
-                        <p className="text-[10px] text-zinc-600">PlayStation 2 · Emulador padrão</p>
+                        <p className="text-[10px] text-zinc-600">PlayStation 2 · emulador padrão</p>
                       </div>
                       <Check size={16} className="ml-auto text-emerald-400" />
                     </div>
                     <label className="mt-5 block">
                       <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                        Executável
+                        Pasta ou executável
                       </span>
                       <input
                         value={settings.emulatorPaths.PS2 ?? ""}
@@ -99,7 +99,11 @@ export function Settings() {
                           })
                         }
                         className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 font-mono text-[11px] text-zinc-400 outline-none focus:border-brand-400/30"
+                        placeholder="F:\PCSX2 ou F:\PCSX2\pcsx2-qt.exe"
                       />
+                      <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+                        O Ludex valida o caminho e inicia o PCSX2 diretamente, sem shell.
+                      </p>
                     </label>
                   </div>
                   <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.01] p-4 opacity-50 sm:p-5">
@@ -109,7 +113,7 @@ export function Settings() {
                       </span>
                       <div>
                         <h3 className="text-sm font-semibold text-zinc-500">RPCS3</h3>
-                        <p className="text-[10px] text-zinc-700">PlayStation 3 · Suporte futuro</p>
+                        <p className="text-[10px] text-zinc-700">PlayStation 3 · suporte futuro</p>
                       </div>
                       <span className="ml-auto rounded bg-white/5 px-2 py-1 text-[8px] font-bold text-zinc-600 uppercase">
                         Em breve

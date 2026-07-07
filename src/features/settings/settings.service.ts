@@ -1,30 +1,58 @@
 import type { AppSettings } from "@/features/settings/settings.types";
 
-let settings: AppSettings = {
+const settingsStorageKey = "ludex.settings.v1";
+
+const defaultSettings: AppSettings = {
   theme: "dark",
   language: "pt-BR",
   minimizeToTray: false,
   checkForUpdates: true,
   emulatorPaths: {
-    PS2: "C:/Emulators/PCSX2/pcsx2-qt.exe",
+    PS2: "F:\\PCSX2",
   },
+};
+
+const readSettings = (): AppSettings => {
+  const rawValue = window.localStorage.getItem(settingsStorageKey);
+  if (!rawValue) return structuredClone(defaultSettings);
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as Partial<AppSettings>;
+    return {
+      ...defaultSettings,
+      ...parsedValue,
+      emulatorPaths: {
+        ...defaultSettings.emulatorPaths,
+        ...parsedValue.emulatorPaths,
+      },
+    };
+  } catch {
+    return structuredClone(defaultSettings);
+  }
+};
+
+const writeSettings = (settings: AppSettings) => {
+  window.localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 };
 
 export const settingsService = {
   async get(): Promise<AppSettings> {
-    return structuredClone(settings);
+    return readSettings();
   },
 
   async update(patch: Partial<AppSettings>): Promise<AppSettings> {
-    settings = {
-      ...settings,
+    const currentSettings = readSettings();
+    const nextSettings = {
+      ...currentSettings,
       ...patch,
       emulatorPaths: {
-        ...settings.emulatorPaths,
+        ...currentSettings.emulatorPaths,
         ...patch.emulatorPaths,
       },
     };
 
-    return structuredClone(settings);
+    writeSettings(nextSettings);
+
+    return nextSettings;
   },
 };

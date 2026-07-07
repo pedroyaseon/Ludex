@@ -23,5 +23,5 @@ export interface ScanResult {
   files: ScannedFile[];
   ignoredCount: number;
   durationMilliseconds: number;
-  mocked: true;
+  mocked: boolean;
 }

@@ -4,38 +4,38 @@
 
 Ludex é uma biblioteca desktop moderna para organizar jogos locais de **PlayStation 2**, com suporte futuro a **PlayStation 3**, e iniciá-los por meio de emuladores configurados pelo usuário.
 
-O produto combina a praticidade de uma biblioteca como a Steam com a navegação visual de interfaces modernas de console. O usuário mantém seus próprios jogos no computador; o Ludex apenas organiza a coleção, apresenta metadados e, futuramente, coordena a abertura do emulador adequado.
+O produto combina a praticidade de uma biblioteca como a Steam com a navegação visual de interfaces modernas de console. O usuário mantém seus próprios jogos no computador; o Ludex apenas organiza a coleção local e aciona o emulador configurado.
 
 > [!IMPORTANT]
 > O escopo do Ludex começa em **PS2** com PCSX2. PS3 e RPCS3 fazem parte do roadmap. **PS1 não faz parte deste projeto.**
 
 ## Estado atual
 
-Esta é a fundação do produto (`v0.1.0`). A interface, os tipos de domínio e as fronteiras de serviço estão implementados com dados mockados. Nesta etapa, o Ludex **não** lê pastas reais, persiste em SQLite ou inicia emuladores.
+Versão: `v0.3.0`.
 
-### Disponível nesta entrega
+Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
-- aplicação desktop Tauri 2 com React, TypeScript e Vite;
-- design dark responsivo para desktop;
-- biblioteca mockada de PS2, busca e filtros;
-- detalhes do jogo e ação de jogar demonstrativa;
-- fluxo visual de importação com scanner mockado;
-- configurações locais em memória para PCSX2;
-- adapters de emulador para PCSX2 e RPCS3;
-- módulos Rust preparados para scanner, launcher e commands;
-- validações automatizadas de lint, formato, tipos e builds.
+- scanner nativo de arquivos PS2 via Tauri/Rust;
+- importação de `.iso`, `.chd`, `.bin` e `.cue`;
+- biblioteca exibida a partir de jogos importados, sem jogos exemplo no fluxo principal;
+- persistência temporária em `localStorage`, enquanto SQLite não é integrado;
+- configuração local do caminho do PCSX2;
+- launcher nativo para abrir jogos PS2 com PCSX2;
+- validações de caminho, extensão e execução sem shell.
+
+Ainda não há SQLite, scanner incremental, metadados reais, download de capas, backend cloud ou suporte real a PS3.
 
 ## Stack
 
-| Camada       | Tecnologia                    | Responsabilidade                                |
-| ------------ | ----------------------------- | ----------------------------------------------- |
-| Desktop      | [Tauri 2](https://tauri.app/) | janela nativa e futura integração com o sistema |
-| UI           | React 19                      | componentes e experiência de navegação          |
-| Linguagem    | TypeScript                    | domínio e frontend estritamente tipados         |
-| Build        | Vite                          | ambiente de desenvolvimento e bundle web        |
-| Estilo       | Tailwind CSS 4                | design system e layout responsivo               |
-| Nativo       | Rust                          | futuros commands, scanner e launcher            |
-| Persistência | SQLite (futuro)               | biblioteca, configurações e sessões locais      |
+| Camada       | Tecnologia                    | Responsabilidade                           |
+| ------------ | ----------------------------- | ------------------------------------------ |
+| Desktop      | [Tauri 2](https://tauri.app/) | janela nativa, commands e integração local |
+| UI           | React 19                      | componentes e experiência de navegação     |
+| Linguagem    | TypeScript                    | domínio e frontend tipados                 |
+| Build        | Vite                          | ambiente de desenvolvimento e bundle web   |
+| Estilo       | Tailwind CSS 4                | design system e layout responsivo          |
+| Nativo       | Rust                          | scanner local e launcher seguro            |
+| Persistência | SQLite futuro                 | biblioteca, configurações e sessões locais |
 
 ## Como rodar localmente
 
@@ -45,7 +45,7 @@ Esta é a fundação do produto (`v0.1.0`). A interface, os tipos de domínio e 
 - Node.js 20 ou superior;
 - Rust estável via [rustup](https://rustup.rs/);
 - Microsoft C++ Build Tools com o workload **Desktop development with C++**;
-- WebView2 Runtime (normalmente já incluído no Windows 11).
+- WebView2 Runtime.
 
 Consulte também os [pré-requisitos oficiais do Tauri](https://v2.tauri.app/start/prerequisites/).
 
@@ -58,13 +58,47 @@ npm install
 npm run dev
 ```
 
-Para trabalhar somente na interface, sem abrir a janela Tauri:
+Para trabalhar somente na interface:
 
 ```bash
 npm run dev:web
 ```
 
-### Scripts
+### Fluxo local PS2
+
+1. Abra **Importar jogos**.
+2. Informe a pasta da biblioteca, por exemplo:
+
+   ```text
+   F:\ISOs PS2
+   ```
+
+3. Clique em **Analisar biblioteca**.
+4. Adicione os jogos encontrados à biblioteca.
+5. Abra **Configurações** e confirme o caminho do PCSX2, por exemplo:
+
+   ```text
+   F:\PCSX2
+   ```
+
+   O Ludex aceita a pasta do PCSX2 ou o executável direto, como `pcsx2-qt.exe`.
+
+6. Abra um jogo e clique em **Jogar**.
+
+## Segurança local
+
+O Ludex foi ajustado para manter uma superfície segura nesta etapa:
+
+- não usa shell para abrir emuladores;
+- valida se o caminho do PCSX2 existe;
+- aceita apenas executáveis `.exe`;
+- valida se o jogo existe e é arquivo;
+- permite apenas extensões PS2 suportadas: `.iso`, `.chd`, `.bin`, `.cue`;
+- ignora symlinks durante o scanner;
+- não move, altera, extrai, faz upload ou baixa arquivos de jogos;
+- não envia biblioteca, caminhos locais ou metadados para servidores externos.
+
+## Scripts
 
 | Comando                | Descrição                                           |
 | ---------------------- | --------------------------------------------------- |
@@ -94,7 +128,7 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 
 ## Roadmap
 
-### Fase 1 — Fundação (atual)
+### v0.1.0 — Fundação
 
 - [x] shell Tauri 2 e frontend React;
 - [x] UI da biblioteca, detalhes, importação e configurações;
@@ -102,52 +136,47 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] fronteiras Rust preparadas;
 - [x] automações de qualidade.
 
-### Fase 2 — Biblioteca local
+### v0.2.0 — Engenharia base
 
-- [ ] schema e migrations SQLite;
-- [ ] commands Tauri tipados;
-- [ ] scanner real e incremental de PS2;
-- [ ] deduplicação e tratamento de arquivos `.bin/.cue`;
-- [ ] persistência de pastas e configurações.
+- [x] workflows de CI;
+- [x] scripts de validação;
+- [x] documentação de contribuição;
+- [x] correções de build e identificador Tauri.
 
-### Fase 3 — Launcher
+### v0.3.0 — Biblioteca local PS2
 
-- [ ] descoberta/configuração do PCSX2;
-- [ ] composição segura de argumentos;
-- [ ] perfis por jogo;
-- [ ] sessões e cálculo de tempo jogado;
-- [ ] tratamento de erros do processo nativo.
+- [x] scanner real de arquivos PS2;
+- [x] remoção dos jogos exemplo do fluxo principal;
+- [x] persistência local temporária sem SQLite;
+- [x] configuração local do PCSX2;
+- [x] launcher nativo para PCSX2;
+- [x] validações básicas de segurança local.
 
-### Fase 4 — Metadados
+### Próximas versões
 
-- [ ] provider de metadados intercambiável;
-- [ ] cache local de capas e descrições;
-- [ ] revisão manual de correspondências;
-- [ ] importação e exportação da biblioteca.
+- [ ] SQLite para biblioteca e configurações;
+- [ ] seletor nativo de pastas/arquivos;
+- [ ] deduplicação avançada de `.bin/.cue`;
+- [ ] perfis de execução por jogo;
+- [ ] tracking de sessão e tempo jogado;
+- [ ] cache local de capas e metadados;
+- [ ] suporte futuro a PS3/RPCS3.
 
-### Futuro — PS3
-
-- [ ] adapter RPCS3;
-- [ ] suporte a pastas de jogo e `.pkg`;
-- [ ] particularidades de instalação e boot de títulos PS3.
-
-## Arquitetura
-
-O frontend é organizado por responsabilidade. Componentes genéricos não conhecem persistência ou Tauri; features encapsulam contratos e casos de uso; páginas apenas compõem a experiência.
+## Estrutura do projeto
 
 ```text
 Ludex/
 ├── public/
-│   └── covers/                 # artes locais usadas pelos mocks
+│   └── covers/                 # artes locais usadas por fixtures/dev
 ├── src/
 │   ├── app/                    # raiz e estilos globais
 │   ├── components/             # componentes reutilizáveis
 │   ├── features/
 │   │   ├── games/              # catálogo, serviço e hook
-│   │   ├── emulators/          # adapters PCSX2/RPCS3
-│   │   ├── library-scanner/    # contrato do scanner
+│   │   ├── emulators/          # adapters e launcher frontend
+│   │   ├── library-scanner/    # contrato e serviço do scanner
 │   │   ├── metadata/           # provider mockado
-│   │   └── settings/           # preferências em memória
+│   │   └── settings/           # preferências locais temporárias
 │   ├── lib/                    # utilitários sem regra de negócio
 │   ├── pages/                  # telas roteadas
 │   ├── routes/                 # definição de rotas
@@ -156,11 +185,9 @@ Ludex/
     ├── capabilities/           # permissões Tauri
     └── src/
         ├── commands/           # API entre frontend e Rust
-        ├── scanner/            # futura leitura do filesystem
-        └── launcher/           # futura execução de emuladores
+        ├── scanner/            # leitura segura do filesystem
+        └── launcher/           # execução segura de emuladores
 ```
-
-As implementações mockadas devem preservar os contratos públicos. Assim, a troca por repositories SQLite e commands Tauri não exige reescrever páginas e componentes.
 
 ## Versionamento e colaboração
 

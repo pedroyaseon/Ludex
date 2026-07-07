@@ -1,6 +1,7 @@
 import {
   Check,
   ChevronRight,
+  CircleAlert,
   FileArchive,
   FolderOpen,
   Info,
@@ -8,23 +9,49 @@ import {
   ScanSearch,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { gamesService } from "@/features/games/games.service";
 import { scannerService } from "@/features/library-scanner/scanner.service";
 import { supportedExtensions, type ScanResult } from "@/features/library-scanner/scanner.types";
 
 export function ImportLibrary() {
-  const [folderPath, setFolderPath] = useState("D:/Games/PS2");
+  const navigate = useNavigate();
+  const [folderPath, setFolderPath] = useState("F:\\ISOs PS2");
   const [recursive, setRecursive] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [result, setResult] = useState<ScanResult>();
+  const [error, setError] = useState<string>();
 
   async function handleScan() {
     if (!folderPath.trim()) return;
     setIsScanning(true);
     setResult(undefined);
-    const scanResult = await scannerService.preview({ folderPath, platform: "PS2", recursive });
-    setResult(scanResult);
-    setIsScanning(false);
+    setError(undefined);
+
+    try {
+      const scanResult = await scannerService.preview({ folderPath, platform: "PS2", recursive });
+      setResult(scanResult);
+    } catch (scanError) {
+      setError(scanError instanceof Error ? scanError.message : String(scanError));
+    } finally {
+      setIsScanning(false);
+    }
+  }
+
+  async function handleImport() {
+    if (!result?.files.length) return;
+    setIsImporting(true);
+    setError(undefined);
+
+    try {
+      await gamesService.importScanResult(result);
+      navigate("/");
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : String(importError));
+      setIsImporting(false);
+    }
   }
 
   return (
@@ -34,7 +61,7 @@ export function ImportLibrary() {
         <PageHeader
           eyebrow="Biblioteca"
           title="Importar jogos"
-          description="Aponte para uma pasta local. Nesta preview, a varredura é simulada e nenhum arquivo será alterado."
+          description="Aponte para sua pasta local de PS2. O Ludex indexa referências aos arquivos, sem mover, alterar ou enviar seus jogos."
         />
 
         <div className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -61,7 +88,7 @@ export function ImportLibrary() {
                     value={folderPath}
                     onChange={(event) => setFolderPath(event.target.value)}
                     className="h-12 min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-black/20 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-brand-400/30 focus:ring-4 focus:ring-brand-500/[0.05]"
-                    placeholder="D:/Games/PS2"
+                    placeholder="F:\ISOs PS2"
                   />
                   <button
                     type="button"
@@ -133,6 +160,13 @@ export function ImportLibrary() {
                   </>
                 )}
               </button>
+
+              {error && (
+                <div className="flex items-start gap-3 rounded-xl border border-rose-300/15 bg-rose-300/[0.055] p-3.5 text-xs leading-relaxed text-rose-100/75">
+                  <CircleAlert size={16} className="mt-0.5 shrink-0 text-rose-300" />
+                  {error}
+                </div>
+              )}
             </div>
           </section>
 
@@ -178,25 +212,37 @@ export function ImportLibrary() {
                     {result.files.length} jogos encontrados
                   </h2>
                   <p className="mt-1 text-[10px] text-zinc-600">
-                    Resultado simulado em {result.durationMilliseconds} ms · {result.ignoredCount}{" "}
+                    Varredura real em {result.durationMilliseconds} ms · {result.ignoredCount}{" "}
                     arquivos ignorados
                   </p>
                 </div>
               </div>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-zinc-950">
-                Revisar importação <ChevronRight size={15} />
+              <button
+                type="button"
+                onClick={() => void handleImport()}
+                disabled={!result.files.length || isImporting}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isImporting ? "Importando..." : "Adicionar à biblioteca"}{" "}
+                <ChevronRight size={15} />
               </button>
             </div>
-            <div className="mt-5 divide-y divide-white/[0.055] border-t border-white/[0.055]">
-              {result.files.map((file) => (
-                <div key={file.path} className="flex items-center justify-between py-3 text-xs">
-                  <span className="truncate text-zinc-400">{file.fileName}</span>
-                  <span className="ml-3 rounded bg-white/5 px-2 py-1 font-mono text-[9px] text-zinc-600">
-                    {file.extension}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {result.files.length ? (
+              <div className="mt-5 divide-y divide-white/[0.055] border-t border-white/[0.055]">
+                {result.files.map((file) => (
+                  <div key={file.path} className="flex items-center justify-between py-3 text-xs">
+                    <span className="truncate text-zinc-400">{file.fileName}</span>
+                    <span className="ml-3 rounded bg-white/5 px-2 py-1 font-mono text-[9px] text-zinc-600">
+                      {file.extension}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 rounded-2xl border border-white/[0.06] bg-black/10 p-4 text-xs text-zinc-500">
+                Nenhuma ISO ou imagem PS2 compatível foi encontrada nessa pasta.
+              </p>
+            )}
           </section>
         )}
       </div>
