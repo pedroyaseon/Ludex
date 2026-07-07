@@ -10,6 +10,13 @@ const defaultSettings: AppSettings = {
   emulatorPaths: {
     PS2: "F:\\PCSX2",
   },
+  libraryFolders: {
+    PS2: {
+      folderPath: "F:\\ISOs PS2",
+      recursiveScan: true,
+      autoScan: true,
+    },
+  },
 };
 
 const readSettings = (): AppSettings => {
@@ -24,6 +31,10 @@ const readSettings = (): AppSettings => {
       emulatorPaths: {
         ...defaultSettings.emulatorPaths,
         ...parsedValue.emulatorPaths,
+      },
+      libraryFolders: {
+        ...defaultSettings.libraryFolders,
+        ...parsedValue.libraryFolders,
       },
     };
   } catch {
@@ -48,6 +59,10 @@ export const settingsService = {
       emulatorPaths: {
         ...currentSettings.emulatorPaths,
         ...patch.emulatorPaths,
+      },
+      libraryFolders: {
+        ...currentSettings.libraryFolders,
+        ...patch.libraryFolders,
       },
     };
 

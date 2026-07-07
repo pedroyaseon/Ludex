@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { gamesService } from "@/features/games/games.service";
 import { scannerService } from "@/features/library-scanner/scanner.service";
 import { supportedExtensions, type ScanResult } from "@/features/library-scanner/scanner.types";
+import { settingsService } from "@/features/settings/settings.service";
 
 export function ImportLibrary() {
   const navigate = useNavigate();
@@ -47,6 +48,15 @@ export function ImportLibrary() {
 
     try {
       await gamesService.importScanResult(result);
+      await settingsService.update({
+        libraryFolders: {
+          PS2: {
+            folderPath,
+            recursiveScan: recursive,
+            autoScan: true,
+          },
+        },
+      });
       navigate("/");
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : String(importError));

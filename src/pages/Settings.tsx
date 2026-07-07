@@ -1,10 +1,11 @@
-import { Check, Gamepad2, Globe2, Monitor, Save, ShieldCheck } from "lucide-react";
+import { Check, FolderOpen, Gamepad2, Globe2, Monitor, Save, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { settingsService } from "@/features/settings/settings.service";
 import type { AppSettings } from "@/features/settings/settings.types";
 
 const sections = [
+  { id: "library", label: "Biblioteca", icon: FolderOpen },
   { id: "emulators", label: "Emuladores", icon: Gamepad2 },
   { id: "appearance", label: "Aparência", icon: Monitor },
   { id: "general", label: "Geral", icon: Globe2 },
@@ -12,7 +13,7 @@ const sections = [
 
 export function Settings() {
   const [settings, setSettings] = useState<AppSettings>();
-  const [activeSection, setActiveSection] = useState("emulators");
+  const [activeSection, setActiveSection] = useState("library");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -61,6 +62,98 @@ export function Settings() {
           </nav>
 
           <div className="min-w-0">
+            {activeSection === "library" && (
+              <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-white">Biblioteca PS2</h2>
+                    <p className="mt-1 text-xs text-zinc-600">
+                      Configure a pasta monitorada para detecção automática de jogos locais.
+                    </p>
+                  </div>
+                  <span className="rounded-lg border border-brand-300/10 bg-brand-400/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-wider text-brand-200 uppercase">
+                    Auto-scan
+                  </span>
+                </div>
+
+                <div className="mt-7 space-y-5">
+                  <label className="block">
+                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
+                      Pasta de ISOs PS2
+                    </span>
+                    <input
+                      value={settings.libraryFolders.PS2?.folderPath ?? ""}
+                      onChange={(event) =>
+                        setSettings({
+                          ...settings,
+                          libraryFolders: {
+                            ...settings.libraryFolders,
+                            PS2: {
+                              folderPath: event.target.value,
+                              recursiveScan: settings.libraryFolders.PS2?.recursiveScan ?? true,
+                              autoScan: settings.libraryFolders.PS2?.autoScan ?? true,
+                            },
+                          },
+                        })
+                      }
+                      className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 font-mono text-[11px] text-zinc-400 outline-none focus:border-brand-400/30"
+                      placeholder="F:\ISOs PS2"
+                    />
+                    <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+                      Ao abrir a Home, o Ludex escaneia essa pasta e atualiza a biblioteca local.
+                    </p>
+                  </label>
+
+                  {[
+                    {
+                      key: "autoScan" as const,
+                      title: "Detectar jogos automaticamente",
+                      description: "Escaneia a pasta configurada ao abrir a biblioteca.",
+                    },
+                    {
+                      key: "recursiveScan" as const,
+                      title: "Incluir subpastas",
+                      description: "Procura ISOs e imagens PS2 em toda a árvore de diretórios.",
+                    },
+                  ].map((item) => (
+                    <label
+                      key={item.key}
+                      className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-black/10 p-4"
+                    >
+                      <span>
+                        <span className="block text-xs font-semibold text-zinc-300">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-[10px] text-zinc-600">
+                          {item.description}
+                        </span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={settings.libraryFolders.PS2?.[item.key] ?? true}
+                        onChange={(event) =>
+                          setSettings({
+                            ...settings,
+                            libraryFolders: {
+                              ...settings.libraryFolders,
+                              PS2: {
+                                folderPath: settings.libraryFolders.PS2?.folderPath ?? "",
+                                recursiveScan: settings.libraryFolders.PS2?.recursiveScan ?? true,
+                                autoScan: settings.libraryFolders.PS2?.autoScan ?? true,
+                                [item.key]: event.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="peer sr-only"
+                      />
+                      <span className="relative h-6 w-11 rounded-full bg-zinc-800 after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-brand-500 peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                    </label>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {activeSection === "emulators" && (
               <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
                 <div className="flex items-center justify-between">
