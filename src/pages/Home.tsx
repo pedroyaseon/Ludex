@@ -1,4 +1,4 @@
-import { Heart, Plus, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, Heart, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyLibraryState } from "@/components/EmptyLibraryState";
@@ -13,7 +13,11 @@ export function Home() {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<PlatformSelection>("ALL");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const { games, isLoading } = useGames({ search, platform, favoritesOnly });
+  const { games, isLoading, isSyncing, syncError, lastSyncResult, refresh } = useGames({
+    search,
+    platform,
+    favoritesOnly,
+  });
 
   return (
     <div className="relative min-h-screen overflow-hidden px-5 py-7 sm:px-8 md:px-10 md:py-9 xl:px-12">
@@ -22,16 +26,53 @@ export function Home() {
         <PageHeader
           eyebrow="Biblioteca local"
           title="Sua coleção"
-          description="Seus jogos de PS2 organizados em um só lugar, prontos para quando você estiver."
+          description="Seus jogos de PS2 organizados em um só lugar, com detecção automática na pasta configurada."
           actions={
-            <Link
-              to="/import"
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-950 shadow-lg shadow-black/20 transition-transform hover:-translate-y-0.5"
-            >
-              <Plus size={17} /> Adicionar jogos
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void refresh()}
+                disabled={isSyncing}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 text-sm font-semibold text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+                {isSyncing ? "Escaneando" : "Reescanear"}
+              </button>
+              <Link
+                to="/import"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-950 shadow-lg shadow-black/20 transition-transform hover:-translate-y-0.5"
+              >
+                <Plus size={17} /> Adicionar jogos
+              </Link>
+            </div>
           }
         />
+
+        {(isSyncing || syncError || lastSyncResult) && (
+          <div
+            className={`mt-6 flex items-start gap-3 rounded-2xl border p-4 text-xs leading-relaxed ${
+              syncError
+                ? "border-rose-300/15 bg-rose-300/[0.045] text-rose-100/75"
+                : "border-emerald-300/10 bg-emerald-300/[0.035] text-emerald-100/60"
+            }`}
+          >
+            {syncError ? (
+              <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-300" />
+            ) : (
+              <RefreshCw
+                size={17}
+                className={`mt-0.5 shrink-0 text-emerald-300 ${isSyncing ? "animate-spin" : ""}`}
+              />
+            )}
+            <span>
+              {syncError
+                ? syncError
+                : isSyncing
+                  ? "Detectando jogos automaticamente na pasta configurada..."
+                  : `${lastSyncResult?.scanResult.files.length ?? 0} jogos detectados automaticamente em ${lastSyncResult?.scanResult.request.folderPath ?? "sua pasta PS2"}.`}
+            </span>
+          </div>
+        )}
 
         <section
           className="mt-9 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between"
@@ -74,7 +115,9 @@ export function Home() {
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-zinc-700">Ordenado por atividade recente</p>
+            <p className="text-[11px] text-zinc-700">
+              {isSyncing ? "Atualizando biblioteca local" : "Ordenado por atividade recente"}
+            </p>
           </div>
 
           {isLoading ? (

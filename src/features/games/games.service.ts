@@ -1,10 +1,17 @@
 import type { ScanResult, ScannedFile } from "@/features/library-scanner/scanner.types";
+import { scannerService } from "@/features/library-scanner/scanner.service";
+import { settingsService } from "@/features/settings/settings.service";
 import type { Game, Platform } from "@/types/domain";
 
 export interface GameQuery {
   search?: string;
   platform?: Platform | "ALL";
   favoritesOnly?: boolean;
+}
+
+export interface LibrarySyncResult {
+  scanResult: ScanResult;
+  games: Game[];
 }
 
 const libraryStorageKey = "ludex.library.games.v1";
@@ -124,6 +131,24 @@ export const gamesService = {
     writeStoredGames(nextGames);
 
     return nextGames;
+  },
+
+  async syncConfiguredLibrary(platform: Platform = "PS2"): Promise<LibrarySyncResult | undefined> {
+    const settings = await settingsService.get();
+    const libraryFolder = settings.libraryFolders[platform];
+
+    if (!libraryFolder?.autoScan || !libraryFolder.folderPath.trim()) {
+      return undefined;
+    }
+
+    const scanResult = await scannerService.preview({
+      folderPath: libraryFolder.folderPath,
+      platform,
+      recursive: libraryFolder.recursiveScan,
+    });
+    const games = await this.importScanResult(scanResult);
+
+    return { scanResult, games };
   },
 
   async clear(): Promise<void> {
