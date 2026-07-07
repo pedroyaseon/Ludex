@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import type { AppSettings } from "@/features/settings/settings.types";
 
 const settingsStorageKey = "ludex.settings.v1";
@@ -12,47 +13,55 @@ const defaultSettings: AppSettings = {
   },
 };
 
-const readSettings = (): AppSettings => {
+export function usesDesktopPersistence() {
+  return "__TAURI_INTERNALS__" in window;
+}
+
+const readBrowserSettings = (): AppSettings => {
   const rawValue = window.localStorage.getItem(settingsStorageKey);
   if (!rawValue) return structuredClone(defaultSettings);
 
   try {
     const parsedValue = JSON.parse(rawValue) as Partial<AppSettings>;
-    return {
-      ...defaultSettings,
-      ...parsedValue,
-      emulatorPaths: {
-        ...defaultSettings.emulatorPaths,
-        ...parsedValue.emulatorPaths,
-      },
-    };
+    return mergeSettings(defaultSettings, parsedValue);
   } catch {
     return structuredClone(defaultSettings);
   }
 };
 
-const writeSettings = (settings: AppSettings) => {
+const writeBrowserSettings = (settings: AppSettings) => {
   window.localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 };
 
+function mergeSettings(current: AppSettings, patch: Partial<AppSettings>): AppSettings {
+  return {
+    ...current,
+    ...patch,
+    emulatorPaths: {
+      ...current.emulatorPaths,
+      ...patch.emulatorPaths,
+    },
+  };
+}
+
 export const settingsService = {
   async get(): Promise<AppSettings> {
-    return readSettings();
+    if (usesDesktopPersistence()) {
+      return invoke<AppSettings>("get_settings");
+    }
+
+    return readBrowserSettings();
   },
 
   async update(patch: Partial<AppSettings>): Promise<AppSettings> {
-    const currentSettings = readSettings();
-    const nextSettings = {
-      ...currentSettings,
-      ...patch,
-      emulatorPaths: {
-        ...currentSettings.emulatorPaths,
-        ...patch.emulatorPaths,
-      },
-    };
+    const current = await this.get();
+    const settings = mergeSettings(current, patch);
 
-    writeSettings(nextSettings);
+    if (usesDesktopPersistence()) {
+      return invoke<AppSettings>("save_settings", { settings });
+    }
 
-    return nextSettings;
+    writeBrowserSettings(settings);
+    return settings;
   },
 };

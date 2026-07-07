@@ -14,7 +14,8 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm run build:web
-cargo check --manifest-path src-tauri/Cargo.toml
+npm run check:rust
+npm run test:rust
 ```
 
 Mudanças de regra de negócio devem manter domínio, serviços e UI separados. Acesso a filesystem e processos pertence ao Rust; o frontend consome commands tipados e não deve incorporar lógica nativa.

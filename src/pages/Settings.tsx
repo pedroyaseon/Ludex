@@ -1,7 +1,17 @@
-import { Check, Gamepad2, Globe2, Monitor, Save, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Database,
+  Gamepad2,
+  Globe2,
+  LoaderCircle,
+  Monitor,
+  Save,
+  ShieldCheck,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { settingsService } from "@/features/settings/settings.service";
+import { settingsService, usesDesktopPersistence } from "@/features/settings/settings.service";
 import type { AppSettings } from "@/features/settings/settings.types";
 
 const sections = [
@@ -13,7 +23,8 @@ const sections = [
 export function Settings() {
   const [settings, setSettings] = useState<AppSettings>();
   const [activeSection, setActiveSection] = useState("emulators");
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
@@ -21,9 +32,17 @@ export function Settings() {
 
   async function handleSave() {
     if (!settings) return;
-    setSettings(await settingsService.update(settings));
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+    setSaveStatus("saving");
+    setErrorMessage("");
+
+    try {
+      setSettings(await settingsService.update(settings));
+      setSaveStatus("saved");
+      window.setTimeout(() => setSaveStatus("idle"), 1800);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+      setSaveStatus("error");
+    }
   }
 
   if (!settings) return <div className="min-h-screen animate-pulse bg-white/[0.015]" />;
@@ -34,17 +53,46 @@ export function Settings() {
         <PageHeader
           eyebrow="Preferências"
           title="Configurações"
-          description="Ajuste emuladores e comportamento do aplicativo. Nesta versão, as preferências ficam salvas localmente no desktop."
+          description="Ajuste emuladores e comportamento do aplicativo. No desktop, as preferências são persistidas localmente em SQLite."
           actions={
             <button
               onClick={() => void handleSave()}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-950 hover:bg-zinc-200"
+              disabled={saveStatus === "saving"}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-950 hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60"
             >
-              {saved ? <Check size={16} /> : <Save size={16} />}
-              {saved ? "Salvo" : "Salvar alterações"}
+              {saveStatus === "saving" ? (
+                <LoaderCircle size={16} className="animate-spin" />
+              ) : saveStatus === "saved" ? (
+                <Check size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              {saveStatus === "saving"
+                ? "Salvando..."
+                : saveStatus === "saved"
+                  ? "Salvo"
+                  : "Salvar alterações"}
             </button>
           }
         />
+
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-[10px] font-semibold tracking-wide uppercase">
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-300/10 bg-emerald-400/[0.045] px-2.5 py-1.5 text-emerald-300/80">
+            <Database size={13} />
+            {usesDesktopPersistence() ? "SQLite local ativo" : "Preview web em localStorage"}
+          </span>
+          <span className="text-zinc-700">Nenhum dado é enviado para a nuvem</span>
+        </div>
+
+        {saveStatus === "error" && (
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-300/15 bg-rose-400/[0.055] p-4 text-xs leading-relaxed text-rose-100/75">
+            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-rose-300" />
+            <div>
+              <p className="font-semibold text-rose-200">Não foi possível salvar</p>
+              <p className="mt-1">{errorMessage}</p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)]">
           <nav className="space-y-1" aria-label="Seções das configurações">
@@ -70,8 +118,14 @@ export function Settings() {
                       Configure a pasta ou o executável usado para cada plataforma.
                     </p>
                   </div>
-                  <span className="rounded-lg border border-emerald-300/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-wider text-emerald-300 uppercase">
-                    PS2 ativo
+                  <span
+                    className={`rounded-lg border px-2.5 py-1 text-[9px] font-bold tracking-wider uppercase ${
+                      settings.emulatorPaths.PS2
+                        ? "border-emerald-300/10 bg-emerald-400/[0.06] text-emerald-300"
+                        : "border-amber-300/10 bg-amber-400/[0.06] text-amber-300"
+                    }`}
+                  >
+                    {settings.emulatorPaths.PS2 ? "1 configurado" : "Configuração pendente"}
                   </span>
                 </div>
                 <div className="mt-7 space-y-4">
@@ -84,11 +138,13 @@ export function Settings() {
                         <h3 className="text-sm font-semibold text-zinc-200">PCSX2</h3>
                         <p className="text-[10px] text-zinc-600">PlayStation 2 · emulador padrão</p>
                       </div>
-                      <Check size={16} className="ml-auto text-emerald-400" />
+                      {settings.emulatorPaths.PS2 && (
+                        <Check size={16} className="ml-auto text-emerald-400" />
+                      )}
                     </div>
                     <label className="mt-5 block">
                       <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                        Pasta ou executável
+                        Executável ou pasta
                       </span>
                       <input
                         value={settings.emulatorPaths.PS2 ?? ""}
@@ -101,9 +157,10 @@ export function Settings() {
                         className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 font-mono text-[11px] text-zinc-400 outline-none focus:border-brand-400/30"
                         placeholder="F:\PCSX2 ou F:\PCSX2\pcsx2-qt.exe"
                       />
-                      <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-                        O Ludex valida o caminho e inicia o PCSX2 diretamente, sem shell.
-                      </p>
+                      <span className="mt-2 block text-[10px] leading-relaxed text-zinc-700">
+                        O Ludex aceita a pasta do PCSX2 e resolve automaticamente o executável
+                        correto antes de persistir.
+                      </span>
                     </label>
                   </div>
                   <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.01] p-4 opacity-50 sm:p-5">

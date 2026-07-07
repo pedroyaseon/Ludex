@@ -59,11 +59,11 @@ export function AppSidebar() {
           </p>
           <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase">
             <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-            PCSX2 configurado
+            Persistência local
           </div>
         </div>
 
-        <p className="mt-4 px-2 text-[10px] text-zinc-700">Ludex Preview · v0.1.0</p>
+        <p className="mt-4 px-2 text-[10px] text-zinc-700">Ludex Preview · v0.3.0</p>
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">

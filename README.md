@@ -18,24 +18,25 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - scanner nativo de arquivos PS2 via Tauri/Rust;
 - importação de `.iso`, `.chd`, `.bin` e `.cue`;
 - biblioteca exibida a partir de jogos importados, sem jogos exemplo no fluxo principal;
-- persistência temporária em `localStorage`, enquanto SQLite não é integrado;
+- persistência temporária da biblioteca em `localStorage`;
+- persistência local das configurações em SQLite no app desktop;
 - configuração local do caminho do PCSX2;
 - launcher nativo para abrir jogos PS2 com PCSX2;
 - validações de caminho, extensão e execução sem shell.
 
-Ainda não há SQLite, scanner incremental, metadados reais, download de capas, backend cloud ou suporte real a PS3.
+Ainda não há SQLite para a biblioteca de jogos, scanner incremental, metadados reais, download de capas, backend cloud ou suporte real a PS3.
 
 ## Stack
 
-| Camada       | Tecnologia                    | Responsabilidade                           |
-| ------------ | ----------------------------- | ------------------------------------------ |
-| Desktop      | [Tauri 2](https://tauri.app/) | janela nativa, commands e integração local |
-| UI           | React 19                      | componentes e experiência de navegação     |
-| Linguagem    | TypeScript                    | domínio e frontend tipados                 |
-| Build        | Vite                          | ambiente de desenvolvimento e bundle web   |
-| Estilo       | Tailwind CSS 4                | design system e layout responsivo          |
-| Nativo       | Rust                          | scanner local e launcher seguro            |
-| Persistência | SQLite futuro                 | biblioteca, configurações e sessões locais |
+| Camada       | Tecnologia                    | Responsabilidade                              |
+| ------------ | ----------------------------- | --------------------------------------------- |
+| Desktop      | [Tauri 2](https://tauri.app/) | janela nativa, commands e integração local    |
+| UI           | React 19                      | componentes e experiência de navegação        |
+| Linguagem    | TypeScript                    | domínio e frontend tipados                    |
+| Build        | Vite                          | ambiente de desenvolvimento e bundle web      |
+| Estilo       | Tailwind CSS 4                | design system e layout responsivo             |
+| Nativo       | Rust                          | scanner local e launcher seguro               |
+| Persistência | SQLite + localStorage         | configurações desktop e biblioteca temporária |
 
 ## Como rodar localmente
 
