@@ -63,7 +63,7 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <p className="mt-4 px-2 text-[10px] text-zinc-700">Ludex Preview · v0.1.0</p>
+        <p className="mt-4 px-2 text-[10px] text-zinc-700">Ludex Preview · v0.3.1</p>
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">
