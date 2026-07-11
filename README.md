@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.4.0`.
+Versão: `v0.5.0`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -24,9 +24,13 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - detecção automática da pasta PS2 configurada ao abrir a biblioteca;
 - painel de status da biblioteca com total indexado, última sincronização e contadores de mudanças;
 - limpeza segura do índice local sem apagar arquivos de jogos;
+- seletor nativo para pasta da biblioteca e executável do PCSX2;
+- perfis locais de execução por jogo com fullscreen e argumentos extras seguros;
+- sessão local ativa, finalização manual, histórico recente e tempo jogado;
+- ação para abrir a pasta do jogo no Explorer;
 - validações de caminho, extensão e execução sem shell.
 
-Ainda não há SQLite, scanner incremental avançado, metadados reais, download de capas, backend cloud ou suporte real a PS3. A biblioteca permanece em `localStorage` nesta versão.
+Ainda não há SQLite, scanner incremental avançado, metadados reais, download de capas, backend cloud, monitoramento automático de encerramento do emulador ou suporte real a PS3. A biblioteca, perfis e sessões permanecem em `localStorage` nesta versão.
 
 ## Stack
 
@@ -171,13 +175,22 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] exibir última pasta sincronizada e duração da varredura;
 - [x] permitir limpar o índice local sem remover arquivos originais.
 
+### v0.5.0 — Perfis, sessões e UX nativa
+
+- [x] seletor nativo de pasta para biblioteca PS2;
+- [x] seletor nativo de executável para PCSX2;
+- [x] confirmação antes de limpar o índice local;
+- [x] exibir caminho do jogo e abrir a pasta no Explorer;
+- [x] salvar perfil de execução por jogo;
+- [x] iniciar PCSX2 com fullscreen e argumentos extras sem shell;
+- [x] registrar sessão ativa e finalizar manualmente;
+- [x] atualizar último jogado, tempo jogado e histórico recente.
+
 ### Próximas versões
 
 - [ ] SQLite para biblioteca e configurações;
-- [ ] seletor nativo de pastas/arquivos;
 - [ ] deduplicação avançada de `.bin/.cue`;
-- [ ] perfis de execução por jogo;
-- [ ] tracking de sessão e tempo jogado;
+- [ ] monitoramento automático do processo do emulador;
 - [ ] cache local de capas e metadados;
 - [ ] suporte futuro a PS3/RPCS3.
 
