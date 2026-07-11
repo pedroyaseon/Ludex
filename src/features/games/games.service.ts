@@ -172,6 +172,26 @@ export const gamesService = {
     return readStoredGames().find((game) => game.id === id);
   },
 
+  async recordFinishedSession(gameId: string, durationSeconds: number): Promise<Game | undefined> {
+    await wait(80);
+    const games = readStoredGames();
+    const now = new Date().toISOString();
+    const nextGames = games.map((game) =>
+      game.id === gameId
+        ? {
+            ...game,
+            lastPlayedAt: now,
+            playtimeSeconds: game.playtimeSeconds + durationSeconds,
+            updatedAt: now,
+          }
+        : game,
+    );
+
+    writeStoredGames(nextGames);
+
+    return nextGames.find((game) => game.id === gameId);
+  },
+
   async importScanResult(
     result: ScanResult,
     options: ImportScanOptions = {},
