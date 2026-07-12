@@ -1,4 +1,5 @@
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { EmptyLibraryState } from "@/components/EmptyLibraryState";
 import { GameGrid, GameGridSkeleton } from "@/components/GameGrid";
@@ -16,6 +17,7 @@ export function Home() {
     platform,
     favoritesOnly,
   });
+  const hasRawgData = games.some((game) => game.metadataSource === "RAWG");
 
   return (
     <div className="min-h-screen px-5 py-7 sm:px-8 md:px-10 md:py-9 xl:px-12">
@@ -72,6 +74,23 @@ export function Home() {
             <EmptyLibraryState isSearchResult={Boolean(search || favoritesOnly)} />
           )}
         </section>
+
+        {hasRawgData && (
+          <footer className="mt-10 flex justify-end border-t border-white/[0.055] py-5">
+            <a
+              href="https://rawg.io"
+              target="_blank"
+              rel="noreferrer"
+              onClick={(event) => {
+                event.preventDefault();
+                void openUrl("https://rawg.io");
+              }}
+              className="inline-flex items-center gap-2 text-[10px] font-semibold text-zinc-600 hover:text-brand-300"
+            >
+              <Star size={13} /> Dados e imagens por RAWG
+            </a>
+          </footer>
+        )}
       </div>
     </div>
   );
