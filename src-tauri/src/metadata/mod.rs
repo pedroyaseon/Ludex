@@ -6,6 +6,8 @@ use reqwest::{Client, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{env, time::Duration};
 
+pub mod igdb;
+
 const RAWG_API_BASE: &str = "https://api.rawg.io/api";
 const RAWG_PS2_PLATFORM_ID: &str = "15";
 const MAX_QUERY_LENGTH: usize = 120;
@@ -49,6 +51,18 @@ struct RawgGameDetails {
     publishers: Option<Vec<RawgNamedValue>>,
 }
 
+#[derive(Debug, Deserialize)]
+struct RawgScreenshotsResponse {
+    results: Vec<RawgScreenshot>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawgScreenshot {
+    image: String,
+    width: Option<u32>,
+    height: Option<u32>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameMetadata {
@@ -56,7 +70,8 @@ pub struct GameMetadata {
     title: String,
     description: Option<String>,
     released_at: Option<String>,
-    cover_url: Option<String>,
+    background_url: Option<String>,
+    screenshots: Vec<RawgMedia>,
     genres: Vec<String>,
     developers: Vec<String>,
     publishers: Vec<String>,
@@ -65,13 +80,24 @@ pub struct GameMetadata {
     rawg_url: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawgMedia {
+    image_url: String,
+    width: Option<u32>,
+    height: Option<u32>,
+}
+
 #[tauri::command]
 pub fn is_rawg_configured() -> bool {
     load_api_key().is_ok()
 }
 
 #[tauri::command]
-pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Option<GameMetadata>, String> {
+pub async fn fetch_game_metadata(
+    title: String,
+    platform: String,
+) -> Result<Option<GameMetadata>, String> {
     if platform.trim().to_uppercase() != "PS2" {
         return Err("Metadados RAWG estão disponíveis apenas para PS2 nesta versão.".into());
     }
@@ -81,25 +107,30 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
     let client = Client::builder()
         .https_only(true)
         .timeout(Duration::from_secs(12))
-        .user_agent("Ludex/0.5.3")
+        .user_agent("Ludex/0.6.0")
         .build()
         .map_err(|_| "Não foi possível preparar a conexão com a RAWG.".to_string())?;
 
     let search_url = format!("{RAWG_API_BASE}/games");
-    let search: RawgSearchResponse = get_json(
-        client
-            .get(search_url)
-            .query(&[
-                ("key", api_key.as_str()),
-                ("search", query.as_str()),
-                ("search_precise", "true"),
-                ("platforms", RAWG_PS2_PLATFORM_ID),
-                ("page_size", "5"),
-            ]),
-    )
+    let search: RawgSearchResponse = get_json(client.get(search_url).query(&[
+        ("key", api_key.as_str()),
+        ("search", query.as_str()),
+        ("search_precise", "true"),
+        ("platforms", RAWG_PS2_PLATFORM_ID),
+        ("page_size", "5"),
+    ]))
     .await?;
 
-    let Some(candidate) = search.results.into_iter().find(is_ps2_game) else {
+    let candidate = search
+        .results
+        .into_iter()
+        .filter(is_ps2_game)
+        .map(|game| {
+            let score = title_confidence(&query, &game.name);
+            (game, score)
+        })
+        .max_by(|left, right| left.1.total_cmp(&right.1));
+    let Some((candidate, _)) = candidate.filter(|(_, score)| *score >= 0.72) else {
         return Ok(None);
     };
 
@@ -108,20 +139,28 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
     }
 
     let details_url = format!("{RAWG_API_BASE}/games/{}", candidate.id);
-    let details: RawgGameDetails = get_json(
-        client
-            .get(details_url)
-            .query(&[("key", api_key.as_str())]),
-    )
-    .await?;
+    let details: RawgGameDetails =
+        get_json(client.get(details_url).query(&[("key", api_key.as_str())])).await?;
 
-    Ok(Some(map_metadata(details)))
+    let screenshots_url = format!("{RAWG_API_BASE}/games/{}/screenshots", candidate.id);
+    let screenshots = get_json::<RawgScreenshotsResponse>(
+        client
+            .get(screenshots_url)
+            .query(&[("key", api_key.as_str()), ("page_size", "12")]),
+    )
+    .await
+    .unwrap_or(RawgScreenshotsResponse {
+        results: Vec::new(),
+    });
+
+    Ok(Some(map_metadata(details, screenshots.results)))
 }
 
 fn load_api_key() -> Result<String, String> {
     dotenvy::dotenv().ok();
-    let api_key = env::var("RAWG_API_KEY")
-        .map_err(|_| "RAWG_API_KEY não configurada. Adicione a chave ao arquivo .env.".to_string())?;
+    let api_key = env::var("RAWG_API_KEY").map_err(|_| {
+        "RAWG_API_KEY não configurada. Adicione a chave ao arquivo .env.".to_string()
+    })?;
     let api_key = api_key.trim();
 
     if api_key.len() < 16 || api_key.len() > 160 || api_key.chars().any(char::is_control) {
@@ -144,10 +183,30 @@ fn sanitize_query(title: &str) -> Result<String, String> {
 
 fn is_ps2_game(game: &RawgSearchGame) -> bool {
     game.platforms.as_ref().is_some_and(|platforms| {
-        platforms.iter().any(|entry| {
-            entry.platform.name.eq_ignore_ascii_case("PlayStation 2")
-        })
+        platforms
+            .iter()
+            .any(|entry| entry.platform.name.eq_ignore_ascii_case("PlayStation 2"))
     })
+}
+
+fn title_confidence(expected: &str, candidate: &str) -> f64 {
+    let left = title_words(expected);
+    let right = title_words(candidate);
+    if left == right {
+        return 1.0;
+    }
+    let intersection = left.iter().filter(|word| right.contains(word)).count();
+    let union = left.len() + right.len() - intersection;
+    intersection as f64 / union.max(1) as f64
+}
+
+fn title_words(value: &str) -> Vec<String> {
+    value
+        .to_lowercase()
+        .split(|character: char| !character.is_ascii_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Result<T, String> {
@@ -164,7 +223,9 @@ async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Resu
         return Err("Limite de requisições da RAWG atingido. Tente novamente mais tarde.".into());
     }
     if !status.is_success() {
-        return Err(format!("A RAWG retornou uma resposta inesperada ({status})."));
+        return Err(format!(
+            "A RAWG retornou uma resposta inesperada ({status})."
+        ));
     }
 
     let bytes = response
@@ -178,7 +239,7 @@ async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Resu
     serde_json::from_slice(&bytes).map_err(|_| "A RAWG retornou dados inválidos.".to_string())
 }
 
-fn map_metadata(details: RawgGameDetails) -> GameMetadata {
+fn map_metadata(details: RawgGameDetails, screenshots: Vec<RawgScreenshot>) -> GameMetadata {
     let description = details
         .description_raw
         .filter(|value| !value.trim().is_empty())
@@ -190,7 +251,18 @@ fn map_metadata(details: RawgGameDetails) -> GameMetadata {
         title: truncate(details.name.trim(), 200),
         description,
         released_at: details.released.filter(|value| value.len() == 10),
-        cover_url: details.background_image.and_then(validate_image_url),
+        background_url: details.background_image.and_then(validate_image_url),
+        screenshots: screenshots
+            .into_iter()
+            .filter_map(|item| {
+                validate_image_url(item.image).map(|image_url| RawgMedia {
+                    image_url,
+                    width: item.width,
+                    height: item.height,
+                })
+            })
+            .take(12)
+            .collect(),
         genres: names(details.genres, 6),
         developers: names(details.developers, 6),
         publishers: names(details.publishers, 6),
@@ -267,6 +339,15 @@ mod tests {
     #[test]
     fn sanitizes_slugs_and_html_fallbacks() {
         assert_eq!(safe_slug("god-of-war?<script>"), "god-of-warscript");
-        assert_eq!(strip_html("<p>Safe <strong>text</strong></p>".into()), "Safe text");
+        assert_eq!(
+            strip_html("<p>Safe <strong>text</strong></p>".into()),
+            "Safe text"
+        );
+    }
+
+    #[test]
+    fn does_not_match_black_to_twisted_metal_black() {
+        assert_eq!(title_confidence("Black", "Black"), 1.0);
+        assert!(title_confidence("Black", "Twisted Metal: Black") < 0.72);
     }
 }

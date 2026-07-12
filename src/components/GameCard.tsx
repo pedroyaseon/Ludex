@@ -8,7 +8,7 @@ interface GameCardProps {
 }
 
 export function GameCard({ game }: GameCardProps) {
-  const cover = game.coverLocalPath ?? game.coverUrl;
+  const cover = game.coverLocalPath ?? game.metadata?.cover?.imageUrl ?? game.coverUrl;
 
   return (
     <article className="game-card group min-w-0">

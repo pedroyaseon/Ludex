@@ -1,5 +1,46 @@
 export type Platform = "PS2" | "PS3";
 export type MetadataStatus = "pending" | "matched" | "not_found" | "error";
+export type MetadataProviderName = "rawg" | "igdb" | "manual";
+
+export interface GameArtwork {
+  provider: MetadataProviderName;
+  type: "cover" | "background" | "screenshot";
+  imageUrl: string;
+  localPath?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface GameVideo {
+  provider: "youtube" | "external";
+  externalId: string;
+  title?: string;
+  thumbnailUrl?: string;
+  watchUrl?: string;
+  embedUrl?: string;
+}
+
+export interface ComposedGameMetadata {
+  schemaVersion?: number;
+  title: string;
+  description?: string;
+  summary?: string;
+  releaseDate?: string;
+  releaseYear?: number;
+  genres: string[];
+  developers: string[];
+  publishers: string[];
+  rating?: number;
+  metacritic?: number;
+  cover?: GameArtwork;
+  background?: GameArtwork;
+  screenshots: GameArtwork[];
+  videos: GameVideo[];
+  rawgId?: number;
+  igdbId?: number;
+  rawgUrl?: string;
+  metadataUpdatedAt?: string;
+}
 
 export interface Game {
   id: string;
@@ -20,13 +61,14 @@ export interface Game {
   releasedAt?: string;
   rating?: number;
   metacritic?: number;
-  metadataSource?: "RAWG";
+  metadataSource?: "RAWG" | "IGDB" | "COMPOSED";
   metadataExternalId?: string;
   metadataStatus?: MetadataStatus;
   metadataLastAttemptAt?: string;
   metadataUpdatedAt?: string;
   metadataError?: string;
   rawgUrl?: string;
+  metadata?: ComposedGameMetadata;
   lastPlayedAt?: string;
   playtimeSeconds: number;
   isFavorite: boolean;

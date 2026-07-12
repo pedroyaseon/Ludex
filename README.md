@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.5.3`.
+Versão: `v0.6.0`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -26,7 +26,8 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - interface da biblioteca mais limpa, visual e orientada às capas;
 - sincronização manual forçada disponível na área **Importação manual**;
 - temas escuro, claro e automático conforme o sistema;
-- capas e metadados de jogos obtidos pela RAWG;
+- capas oficiais e referências de vídeo obtidas pela IGDB;
+- backgrounds, screenshots e metadados textuais obtidos pela RAWG;
 - enriquecimento automático e atualização manual por jogo;
 - limpeza segura do índice local sem apagar arquivos de jogos;
 - seletor nativo para pasta da biblioteca e executável do PCSX2;
@@ -73,6 +74,8 @@ Crie um arquivo `.env` na raiz do projeto antes de iniciar o aplicativo:
 
 ```dotenv
 RAWG_API_KEY=sua_chave_da_rawg
+TWITCH_CLIENT_ID=seu_client_id_da_twitch
+TWITCH_CLIENT_SECRET=seu_client_secret_da_twitch
 ```
 
 Use o arquivo versionado `.env.example` como referência. Obtenha sua chave em
@@ -140,6 +143,18 @@ scanner e novas tentativas automáticas respeitam um intervalo de 24 horas.
 A API exige atribuição. As telas que exibem dados ou imagens apresentam um link ativo para a RAWG.
 Consulte os [termos e a documentação oficial](https://api.rawg.io/docs/).
 
+## Estratégia de mídia RAWG + IGDB
+
+- **IGDB** é a fonte preferencial para capa vertical e referências externas de vídeo;
+- **RAWG** permanece como fonte principal de descrição, gêneros, empresas, avaliações, background e screenshots;
+- dados válidos já persistidos nunca são apagados quando um provider falha;
+- a biblioteca continua disponível offline usando o cache em `localStorage`;
+- vídeos são abertos externamente no YouTube, sem download, hospedagem ou autoplay;
+- o token de aplicativo Twitch fica apenas em memória, expira e é renovado automaticamente;
+- credenciais em aplicativos desktop não são um cofre absoluto: mantenha seu `.env` privado e use credenciais dedicadas ao desenvolvimento.
+
+A IGDB usa autenticação de aplicativo da Twitch. Consulte a [documentação oficial da IGDB](https://api-docs.igdb.com/) e o [fluxo client credentials da Twitch](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/).
+
 ## Scripts
 
 | Comando                | Descrição                                           |
@@ -152,6 +167,7 @@ Consulte os [termos e a documentação oficial](https://api.rawg.io/docs/).
 | `npm run typecheck`    | executa o compilador TypeScript sem emitir arquivos |
 | `npm run check:rust`   | valida o crate Tauri no ambiente MSVC do Windows    |
 | `npm run test:rust`    | executa testes unitários do backend Rust            |
+| `npm run test`         | executa testes de composição e cache do frontend    |
 | `npm run format`       | formata o projeto com Prettier                      |
 | `npm run format:check` | verifica formatação sem alterar arquivos            |
 
@@ -249,6 +265,18 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] adicionar atribuição obrigatória e link ativo para a RAWG;
 - [x] aplicar timeout, limites de resposta, validação de URLs e CSP;
 - [x] adicionar testes Rust para sanitização e URLs permitidas.
+
+### v0.6.0 — IGDB e mídia multi-provider
+
+- [x] adicionar provider IGDB com autenticação Twitch e token em memória;
+- [x] priorizar capa vertical da IGDB sem usar screenshots como capa;
+- [x] classificar mídia RAWG como background e screenshots;
+- [x] combinar providers com fallbacks compatíveis com dados antigos;
+- [x] persistir capa, background, screenshots, vídeos, IDs e atualização;
+- [x] adicionar galeria horizontal e visualização ampliada;
+- [x] abrir vídeos externos referenciados pela IGDB;
+- [x] manter biblioteca, modo offline e launcher independentes das APIs;
+- [x] testar composição, prioridades, migração, cache e sanitização.
 
 ### Próximas versões
 

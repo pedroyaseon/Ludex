@@ -8,6 +8,7 @@ mod scanner;
 pub fn run() {
     tauri::Builder::default()
         .manage(scanner::LibraryWatcherState::default())
+        .manage(metadata::igdb::IgdbState::default())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::health_check,
@@ -16,6 +17,8 @@ pub fn run() {
             launcher::launch_game,
             metadata::fetch_game_metadata,
             metadata::is_rawg_configured,
+            metadata::igdb::fetch_igdb_metadata,
+            metadata::igdb::is_igdb_configured,
             native_dialogs::pick_folder,
             native_dialogs::pick_executable
         ])

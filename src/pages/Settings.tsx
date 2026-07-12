@@ -34,14 +34,15 @@ export function Settings() {
   const [libraryCleared, setLibraryCleared] = useState(false);
   const [isClearLibraryDialogOpen, setIsClearLibraryDialogOpen] = useState(false);
   const [rawgConfigured, setRawgConfigured] = useState(false);
+  const [igdbConfigured, setIgdbConfigured] = useState(false);
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
     void gamesService.getLibraryState().then(setLibraryState);
-    void metadataService
-      .isConfigured()
-      .then(setRawgConfigured)
-      .catch(() => setRawgConfigured(false));
+    void metadataService.configuration().then(({ rawg, igdb }) => {
+      setRawgConfigured(rawg);
+      setIgdbConfigured(igdb);
+    });
   }, []);
 
   async function handleSave() {
@@ -406,6 +407,12 @@ export function Settings() {
                     <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-600">
                       Configure <code>RAWG_API_KEY</code> no arquivo <code>.env</code> local. A
                       chave é lida apenas pelo backend Rust e não é exposta à interface.
+                    </p>
+                    <p className="mt-2 text-[10px] text-zinc-600">
+                      IGDB/Twitch:{" "}
+                      <span className={igdbConfigured ? "text-emerald-300" : "text-amber-300"}>
+                        {igdbConfigured ? "configurada" : "credenciais ausentes"}
+                      </span>
                     </p>
                   </div>
                 </div>
