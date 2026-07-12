@@ -6,6 +6,8 @@ use reqwest::{Client, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{env, time::Duration};
 
+pub mod igdb;
+
 const RAWG_API_BASE: &str = "https://api.rawg.io/api";
 const RAWG_PS2_PLATFORM_ID: &str = "15";
 const MAX_QUERY_LENGTH: usize = 120;
@@ -49,6 +51,12 @@ struct RawgGameDetails {
     publishers: Option<Vec<RawgNamedValue>>,
 }
 
+#[derive(Debug, Deserialize)]
+struct RawgScreenshotsResponse { results: Vec<RawgScreenshot> }
+
+#[derive(Debug, Deserialize)]
+struct RawgScreenshot { image: String, width: Option<u32>, height: Option<u32> }
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameMetadata {
@@ -56,7 +64,8 @@ pub struct GameMetadata {
     title: String,
     description: Option<String>,
     released_at: Option<String>,
-    cover_url: Option<String>,
+    background_url: Option<String>,
+    screenshots: Vec<RawgMedia>,
     genres: Vec<String>,
     developers: Vec<String>,
     publishers: Vec<String>,
@@ -64,6 +73,10 @@ pub struct GameMetadata {
     metacritic: Option<u16>,
     rawg_url: String,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawgMedia { image_url: String, width: Option<u32>, height: Option<u32> }
 
 #[tauri::command]
 pub fn is_rawg_configured() -> bool {
@@ -115,7 +128,12 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
     )
     .await?;
 
-    Ok(Some(map_metadata(details)))
+    let screenshots_url = format!("{RAWG_API_BASE}/games/{}/screenshots", candidate.id);
+    let screenshots = get_json::<RawgScreenshotsResponse>(
+        client.get(screenshots_url).query(&[("key", api_key.as_str()), ("page_size", "12")]),
+    ).await.unwrap_or(RawgScreenshotsResponse { results: Vec::new() });
+
+    Ok(Some(map_metadata(details, screenshots.results)))
 }
 
 fn load_api_key() -> Result<String, String> {
@@ -178,7 +196,7 @@ async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Resu
     serde_json::from_slice(&bytes).map_err(|_| "A RAWG retornou dados inválidos.".to_string())
 }
 
-fn map_metadata(details: RawgGameDetails) -> GameMetadata {
+fn map_metadata(details: RawgGameDetails, screenshots: Vec<RawgScreenshot>) -> GameMetadata {
     let description = details
         .description_raw
         .filter(|value| !value.trim().is_empty())
@@ -190,7 +208,8 @@ fn map_metadata(details: RawgGameDetails) -> GameMetadata {
         title: truncate(details.name.trim(), 200),
         description,
         released_at: details.released.filter(|value| value.len() == 10),
-        cover_url: details.background_image.and_then(validate_image_url),
+        background_url: details.background_image.and_then(validate_image_url),
+        screenshots: screenshots.into_iter().filter_map(|item| validate_image_url(item.image).map(|image_url| RawgMedia { image_url, width: item.width, height: item.height })).take(12).collect(),
         genres: names(details.genres, 6),
         developers: names(details.developers, 6),
         publishers: names(details.publishers, 6),
