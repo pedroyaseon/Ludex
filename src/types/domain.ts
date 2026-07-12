@@ -1,4 +1,5 @@
 export type Platform = "PS2" | "PS3";
+export type MetadataStatus = "pending" | "matched" | "not_found" | "error";
 
 export interface Game {
   id: string;
@@ -14,6 +15,18 @@ export interface Game {
   genre?: string;
   region?: string;
   serial?: string;
+  developer?: string;
+  publisher?: string;
+  releasedAt?: string;
+  rating?: number;
+  metacritic?: number;
+  metadataSource?: "RAWG";
+  metadataExternalId?: string;
+  metadataStatus?: MetadataStatus;
+  metadataLastAttemptAt?: string;
+  metadataUpdatedAt?: string;
+  metadataError?: string;
+  rawgUrl?: string;
   lastPlayedAt?: string;
   playtimeSeconds: number;
   isFavorite: boolean;

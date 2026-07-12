@@ -1,5 +1,6 @@
 import type { ScanResult, ScannedFile } from "@/features/library-scanner/scanner.types";
 import { scannerService } from "@/features/library-scanner/scanner.service";
+import { metadataService } from "@/features/metadata/metadata.service";
 import { settingsService } from "@/features/settings/settings.service";
 import type { Game, Platform } from "@/types/domain";
 
@@ -137,6 +138,18 @@ const gameFromScannedFile = (file: ScannedFile, existing?: Game): Game => {
     genre: existing?.genre ?? "Biblioteca local",
     region: existing?.region,
     serial: existing?.serial,
+    developer: existing?.developer,
+    publisher: existing?.publisher,
+    releasedAt: existing?.releasedAt,
+    rating: existing?.rating,
+    metacritic: existing?.metacritic,
+    metadataSource: existing?.metadataSource,
+    metadataExternalId: existing?.metadataExternalId,
+    metadataStatus: existing?.metadataStatus,
+    metadataLastAttemptAt: existing?.metadataLastAttemptAt,
+    metadataUpdatedAt: existing?.metadataUpdatedAt,
+    metadataError: existing?.metadataError,
+    rawgUrl: existing?.rawgUrl,
     lastPlayedAt: existing?.lastPlayedAt,
     playtimeSeconds: existing?.playtimeSeconds ?? 0,
     isFavorite: existing?.isFavorite ?? false,
@@ -190,6 +203,97 @@ export const gamesService = {
     writeStoredGames(nextGames);
 
     return nextGames.find((game) => game.id === gameId);
+  },
+
+  async enrichMetadata(gameId: string): Promise<Game | undefined> {
+    const games = readStoredGames();
+    const game = games.find((candidate) => candidate.id === gameId);
+    if (!game) return undefined;
+
+    const attemptedAt = new Date().toISOString();
+    writeStoredGames(
+      games.map((candidate) =>
+        candidate.id === gameId
+          ? { ...candidate, metadataStatus: "pending", metadataLastAttemptAt: attemptedAt }
+          : candidate,
+      ),
+    );
+
+    try {
+      const metadata = await metadataService.fetch(game.title, game.platform);
+      const updatedAt = new Date().toISOString();
+      const nextGame: Game = metadata
+        ? {
+            ...game,
+            title: metadata.title || game.title,
+            coverUrl: metadata.coverUrl ?? game.coverUrl,
+            description: metadata.description ?? game.description,
+            releasedAt: metadata.releasedAt,
+            releaseYear: metadata.releasedAt
+              ? Number.parseInt(metadata.releasedAt.slice(0, 4), 10)
+              : game.releaseYear,
+            genre: metadata.genres.join(" · ") || game.genre,
+            developer: metadata.developers.join(", ") || game.developer,
+            publisher: metadata.publishers.join(", ") || game.publisher,
+            rating: metadata.rating,
+            metacritic: metadata.metacritic,
+            metadataSource: "RAWG",
+            metadataExternalId: String(metadata.rawgId),
+            metadataStatus: "matched",
+            metadataLastAttemptAt: attemptedAt,
+            metadataUpdatedAt: updatedAt,
+            metadataError: undefined,
+            rawgUrl: metadata.rawgUrl,
+            updatedAt,
+          }
+        : {
+            ...game,
+            metadataStatus: "not_found",
+            metadataLastAttemptAt: attemptedAt,
+            metadataError: undefined,
+          };
+
+      writeStoredGames(
+        readStoredGames().map((candidate) => (candidate.id === gameId ? nextGame : candidate)),
+      );
+      return nextGame;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const nextGame: Game = {
+        ...game,
+        metadataStatus: "error",
+        metadataLastAttemptAt: attemptedAt,
+        metadataError: message,
+      };
+      writeStoredGames(
+        readStoredGames().map((candidate) => (candidate.id === gameId ? nextGame : candidate)),
+      );
+      throw new Error(message);
+    }
+  },
+
+  async enrichMissingMetadata(limit = 8): Promise<number> {
+    if (!(await metadataService.isConfigured())) return 0;
+
+    const retryThreshold = Date.now() - 24 * 60 * 60 * 1000;
+    const candidates = readStoredGames()
+      .filter((game) => {
+        if (game.metadataStatus === "matched") return false;
+        if (!game.metadataLastAttemptAt) return true;
+        return new Date(game.metadataLastAttemptAt).getTime() < retryThreshold;
+      })
+      .slice(0, limit);
+
+    let enriched = 0;
+    for (const game of candidates) {
+      try {
+        const result = await this.enrichMetadata(game.id);
+        if (result?.metadataStatus === "matched") enriched += 1;
+      } catch {
+        // Per-game failures are persisted and retried after the cooldown.
+      }
+    }
+    return enriched;
   },
 
   async importScanResult(
