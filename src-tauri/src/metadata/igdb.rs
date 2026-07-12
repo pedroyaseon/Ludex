@@ -159,12 +159,13 @@ fn build_query(title: &str) -> String {
     format!("search \"{escaped}\"; fields id,name,summary,first_release_date,cover.image_id,cover.width,cover.height,artworks.image_id,artworks.width,artworks.height,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.name,videos.video_id; where platforms = ({PS2_PLATFORM_ID}); limit 8;")
 }
 fn confidence(expected: &str, candidate: &str) -> f64 {
-    let left = expected.to_lowercase(); let right = candidate.to_lowercase();
+    let left = title_words(expected); let right = title_words(candidate);
     if left == right { return 1.0; }
-    let words: Vec<_> = left.split_whitespace().collect();
-    let matches = words.iter().filter(|word| right.contains(**word)).count();
-    matches as f64 / words.len().max(1) as f64
+    let intersection = left.iter().filter(|word| right.contains(word)).count();
+    let union = left.len() + right.len() - intersection;
+    intersection as f64 / union.max(1) as f64
 }
+fn title_words(value: &str) -> Vec<String> { value.to_lowercase().split(|c: char| !c.is_ascii_alphanumeric()).filter(|v| !v.is_empty()).map(str::to_string).collect() }
 fn map_game(game: IgdbGame, confidence: f64) -> IgdbMetadata {
     let roles = game.involved_companies.unwrap_or_default();
     IgdbMetadata {
@@ -184,5 +185,6 @@ mod tests {
     use super::*;
     #[test] fn builds_ps2_query_without_injection() { let q = build_query("God of War II\"; limit 500;"); assert!(q.contains("where platforms = (8)")); assert!(!q.contains("II\"")); }
     #[test] fn rejects_ambiguous_match() { assert!(confidence("God of War II", "God Hand") < MIN_CONFIDENCE); }
+    #[test] fn selects_black_instead_of_twisted_metal_black() { assert_eq!(confidence("Black", "Black"), 1.0); assert!(confidence("Black", "Twisted Metal: Black") < MIN_CONFIDENCE); }
     #[test] fn validates_youtube_ids() { assert!(valid_video_id("abc_DEF-123")); assert!(!valid_video_id("bad/id")); }
 }

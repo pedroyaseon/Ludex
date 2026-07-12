@@ -112,7 +112,16 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
     )
     .await?;
 
-    let Some(candidate) = search.results.into_iter().find(is_ps2_game) else {
+    let candidate = search
+        .results
+        .into_iter()
+        .filter(is_ps2_game)
+        .map(|game| {
+            let score = title_confidence(&query, &game.name);
+            (game, score)
+        })
+        .max_by(|left, right| left.1.total_cmp(&right.1));
+    let Some((candidate, _)) = candidate.filter(|(_, score)| *score >= 0.72) else {
         return Ok(None);
     };
 
@@ -166,6 +175,26 @@ fn is_ps2_game(game: &RawgSearchGame) -> bool {
             entry.platform.name.eq_ignore_ascii_case("PlayStation 2")
         })
     })
+}
+
+fn title_confidence(expected: &str, candidate: &str) -> f64 {
+    let left = title_words(expected);
+    let right = title_words(candidate);
+    if left == right {
+        return 1.0;
+    }
+    let intersection = left.iter().filter(|word| right.contains(word)).count();
+    let union = left.len() + right.len() - intersection;
+    intersection as f64 / union.max(1) as f64
+}
+
+fn title_words(value: &str) -> Vec<String> {
+    value
+        .to_lowercase()
+        .split(|character: char| !character.is_ascii_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Result<T, String> {
@@ -287,5 +316,11 @@ mod tests {
     fn sanitizes_slugs_and_html_fallbacks() {
         assert_eq!(safe_slug("god-of-war?<script>"), "god-of-warscript");
         assert_eq!(strip_html("<p>Safe <strong>text</strong></p>".into()), "Safe text");
+    }
+
+    #[test]
+    fn does_not_match_black_to_twisted_metal_black() {
+        assert_eq!(title_confidence("Black", "Black"), 1.0);
+        assert!(title_confidence("Black", "Twisted Metal: Black") < 0.72);
     }
 }

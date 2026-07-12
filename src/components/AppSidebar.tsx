@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 
 const navigation = [
   { label: "Biblioteca", to: "/", icon: Library },
-  { label: "Importação manual", shortLabel: "Importar", to: "/import", icon: RefreshCw },
+  { label: "Importar", shortLabel: "Importar", to: "/import", icon: RefreshCw },
   { label: "Ajustes", to: "/settings", icon: Settings },
 ];
 

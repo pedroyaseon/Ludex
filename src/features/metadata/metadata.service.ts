@@ -66,8 +66,9 @@ export const composeMetadata = (
       ? new Date(igdb.releaseTimestamp * 1000).toISOString().slice(0, 10)
       : existing?.releaseDate);
   return {
-    title: rawg?.title ?? igdb?.title ?? existing?.title ?? "",
-    description: rawg?.description ?? existing?.description,
+    schemaVersion: 2,
+    title: igdb?.title ?? rawg?.title ?? existing?.title ?? "",
+    description: igdb?.summary ?? rawg?.description ?? existing?.description,
     summary: igdb?.summary ?? existing?.summary,
     releaseDate,
     releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : existing?.releaseYear,

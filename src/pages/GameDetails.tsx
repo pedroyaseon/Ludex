@@ -8,7 +8,6 @@ import {
   Heart,
   Info,
   Play,
-  RefreshCw,
   Star,
   Images,
   Youtube,
@@ -24,6 +23,7 @@ import {
 } from "@/features/emulators/launch-profiles.service";
 import { launcherService } from "@/features/emulators/launcher.service";
 import { gamesService } from "@/features/games/games.service";
+import { libraryUpdatedEvent } from "@/features/library-scanner/library-monitor.service";
 import {
   playSessionsService,
   type ActivePlaySession,
@@ -46,8 +46,6 @@ export function GameDetails() {
   const [activeSession, setActiveSession] = useState<ActivePlaySession>();
   const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
-  const [metadataMessage, setMetadataMessage] = useState<string>();
   const [selectedArtwork, setSelectedArtwork] = useState<GameArtwork>();
 
   useEffect(() => {
@@ -77,6 +75,16 @@ export function GameDetails() {
     return () => {
       isActive = false;
     };
+  }, [gameId]);
+
+  useEffect(() => {
+    const handleLibraryUpdated = () => {
+      void gamesService.getById(gameId).then((updatedGame) => {
+        if (updatedGame) setGame(updatedGame);
+      });
+    };
+    window.addEventListener(libraryUpdatedEvent, handleLibraryUpdated);
+    return () => window.removeEventListener(libraryUpdatedEvent, handleLibraryUpdated);
   }, [gameId]);
 
   useEffect(() => {
@@ -174,25 +182,6 @@ export function GameDetails() {
   async function handleRevealGameFile() {
     if (!game) return;
     await revealItemInDir(game.filePath);
-  }
-
-  async function handleFetchMetadata() {
-    if (!game || isFetchingMetadata) return;
-    setIsFetchingMetadata(true);
-    setMetadataMessage(undefined);
-    try {
-      const updatedGame = await gamesService.enrichMetadata(game.id);
-      if (updatedGame) setGame(updatedGame);
-      setMetadataMessage(
-        updatedGame?.metadataStatus === "matched"
-          ? "Informações atualizadas pelos providers configurados."
-          : "Nenhuma correspondência de PS2 foi encontrada na RAWG.",
-      );
-    } catch (error) {
-      setMetadataMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsFetchingMetadata(false);
-    }
   }
 
   async function handleOpenRawg() {
@@ -295,23 +284,6 @@ export function GameDetails() {
             </h1>
             <p className="mt-4 text-sm font-medium text-zinc-500">{game.genre}</p>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-zinc-400">{game.description}</p>
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => void handleFetchMetadata()}
-                disabled={isFetchingMetadata}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-xs font-semibold text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-55"
-              >
-                <RefreshCw size={15} className={isFetchingMetadata ? "animate-spin" : ""} />
-                {isFetchingMetadata
-                  ? "Consultando providers..."
-                  : game.metadataStatus === "matched"
-                    ? "Atualizar informações"
-                    : "Buscar informações"}
-              </button>
-              {metadataMessage && <span className="text-xs text-zinc-500">{metadataMessage}</span>}
-            </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button

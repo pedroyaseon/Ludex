@@ -35,6 +35,8 @@ describe("metadata composition", () => {
     expect(result?.cover?.imageUrl).toContain("t_cover_big/cover123.jpg");
     expect(result?.background?.provider).toBe("rawg");
     expect(result?.screenshots[0].provider).toBe("rawg");
+    expect(result?.description).toBe("IGDB summary");
+    expect(result?.schemaVersion).toBe(2);
   });
 
   it("maps IGDB video references to safe YouTube URLs", () => {

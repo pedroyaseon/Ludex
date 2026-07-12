@@ -1,6 +1,7 @@
 import type { ScanResult, ScannedFile } from "@/features/library-scanner/scanner.types";
 import { scannerService } from "@/features/library-scanner/scanner.service";
 import { composeMetadata, metadataService } from "@/features/metadata/metadata.service";
+import { normalizeGameTitle } from "@/features/metadata/title-normalizer";
 import { settingsService } from "@/features/settings/settings.service";
 import type { Game, Platform } from "@/types/domain";
 
@@ -222,7 +223,13 @@ export const gamesService = {
 
     try {
       const bundle = await metadataService.fetch({
-        title: game.title,
+        title:
+          normalizeGameTitle(
+            game.fileName.replace(
+              new RegExp(`${game.fileExtension.replace(".", "\\.")}$`, "i"),
+              "",
+            ),
+          ) || game.title,
         platform: game.platform,
         releaseYear: game.releaseYear,
         serial: game.serial,
@@ -287,22 +294,29 @@ export const gamesService = {
     const retryThreshold = Date.now() - 24 * 60 * 60 * 1000;
     const candidates = readStoredGames()
       .filter((game) => {
-        if (game.metadataStatus === "matched") return false;
+        const needsMigration = !game.metadata || (game.metadata.schemaVersion ?? 0) < 2;
+        const needsRawg = configuration.rawg && !game.metadata?.rawgId;
+        const needsIgdb = configuration.igdb && !game.metadata?.igdbId;
+        if (needsMigration || needsRawg || needsIgdb) return true;
+        if (game.metadataStatus === "matched" && game.metadata?.metadataUpdatedAt) {
+          return new Date(game.metadata.metadataUpdatedAt).getTime() < retryThreshold;
+        }
         if (!game.metadataLastAttemptAt) return true;
         return new Date(game.metadataLastAttemptAt).getTime() < retryThreshold;
       })
       .slice(0, limit);
 
-    let enriched = 0;
+    let processed = 0;
     for (const game of candidates) {
       try {
-        const result = await this.enrichMetadata(game.id);
-        if (result?.metadataStatus === "matched") enriched += 1;
+        await this.enrichMetadata(game.id);
       } catch {
         // Per-game failures are persisted and retried after the cooldown.
       }
+      processed += 1;
+      await wait(350);
     }
-    return enriched;
+    return processed;
   },
 
   async importScanResult(

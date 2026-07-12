@@ -32,7 +32,9 @@ export const libraryMonitorService = {
       notifyStatus("syncing");
       try {
         await gamesService.syncConfiguredLibrary("PS2");
-        await gamesService.enrichMissingMetadata();
+        while ((await gamesService.enrichMissingMetadata()) === 8) {
+          // Continue in rate-limited batches until every pending game is processed.
+        }
         notifyLibraryUpdated();
         notifyStatus("watching");
       } catch {

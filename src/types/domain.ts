@@ -21,6 +21,7 @@ export interface GameVideo {
 }
 
 export interface ComposedGameMetadata {
+  schemaVersion?: number;
   title: string;
   description?: string;
   summary?: string;
