@@ -1,6 +1,6 @@
 import type { Platform } from "@/types/domain";
 
-export type ThemePreference = "dark" | "system";
+export type ThemePreference = "dark" | "light" | "system";
 
 export interface LibraryFolderSettings {
   folderPath: string;

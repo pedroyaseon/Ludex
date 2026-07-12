@@ -44,6 +44,12 @@ export function Settings() {
     window.setTimeout(() => setSaved(false), 1800);
   }
 
+  async function handleThemeChange(theme: AppSettings["theme"]) {
+    if (!settings) return;
+    setSettings({ ...settings, theme });
+    setSettings(await settingsService.update({ theme }));
+  }
+
   async function handleClearLibrary() {
     await gamesService.clear();
     setLibraryState({ totalGames: 0 });
@@ -325,11 +331,11 @@ export function Settings() {
               <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
                 <h2 className="text-base font-semibold text-white">Aparência</h2>
                 <p className="mt-1 text-xs text-zinc-600">
-                  O Ludex foi desenhado com experiência escura como padrão.
+                  Escolha o visual do launcher. A alteração é aplicada e salva imediatamente.
                 </p>
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <div className="mt-7 grid gap-3 sm:grid-cols-3">
                   <button
-                    onClick={() => setSettings({ ...settings, theme: "dark" })}
+                    onClick={() => void handleThemeChange("dark")}
                     className={`rounded-2xl border p-4 text-left ${settings.theme === "dark" ? "border-brand-300/20 bg-brand-500/[0.07]" : "border-white/[0.07]"}`}
                   >
                     <div className="h-24 rounded-xl bg-[#08090d] p-3">
@@ -343,7 +349,21 @@ export function Settings() {
                     <p className="mt-3 text-xs font-semibold text-zinc-300">Escuro</p>
                   </button>
                   <button
-                    onClick={() => setSettings({ ...settings, theme: "system" })}
+                    onClick={() => void handleThemeChange("light")}
+                    className={`rounded-2xl border p-4 text-left ${settings.theme === "light" ? "border-brand-300/20 bg-brand-500/[0.07]" : "border-white/[0.07]"}`}
+                  >
+                    <div className="h-24 rounded-xl border border-zinc-200 bg-[#f3f5f9] p-3">
+                      <div className="h-3 w-1/3 rounded bg-zinc-300" />
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <span className="h-12 rounded border border-zinc-200 bg-white" />
+                        <span className="h-12 rounded border border-zinc-200 bg-white" />
+                        <span className="h-12 rounded border border-zinc-200 bg-white" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs font-semibold text-zinc-300">Claro</p>
+                  </button>
+                  <button
+                    onClick={() => void handleThemeChange("system")}
                     className={`rounded-2xl border p-4 text-left ${settings.theme === "system" ? "border-brand-300/20 bg-brand-500/[0.07]" : "border-white/[0.07]"}`}
                   >
                     <div className="grid h-24 grid-cols-2 overflow-hidden rounded-xl">

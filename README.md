@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.5.1`.
+Versão: `v0.5.2`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -25,6 +25,7 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - atualização automática da biblioteca ao adicionar ou remover jogos;
 - interface da biblioteca mais limpa, visual e orientada às capas;
 - sincronização manual forçada disponível na área **Importação manual**;
+- temas escuro, claro e automático conforme o sistema;
 - limpeza segura do índice local sem apagar arquivos de jogos;
 - seletor nativo para pasta da biblioteca e executável do PCSX2;
 - perfis locais de execução por jogo com fullscreen e argumentos extras seguros;
@@ -196,6 +197,14 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] monitorar a pasta PS2 em tempo real via Tauri/Rust;
 - [x] sincronizar automaticamente após adições e remoções;
 - [x] manter a importação como ferramenta manual forçada.
+
+### v0.5.2 — Temas e refinamento visual
+
+- [x] adicionar tema claro completo e persistente;
+- [x] manter os modos escuro e seguir sistema;
+- [x] aplicar a preferência de aparência imediatamente;
+- [x] remover o contador ao lado do título da biblioteca;
+- [x] remover o indicador visual de biblioteca ao vivo.
 
 ### Próximas versões
 
