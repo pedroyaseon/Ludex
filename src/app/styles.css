@@ -35,6 +35,128 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #08090d;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  background: #f3f5f9;
+}
+
+:root[data-theme="light"] body,
+:root[data-theme="light"] .app-shell {
+  background: #f3f5f9;
+  color: #18181b;
+}
+
+:root[data-theme="light"] .app-sidebar {
+  border-color: rgb(15 23 42 / 9%);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 12px 0 40px rgb(15 23 42 / 3%);
+}
+
+:root[data-theme="light"] .app-mobile-nav,
+:root[data-theme="light"] .theme-surface-strong {
+  border-color: rgb(15 23 42 / 10%);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 24px 60px rgb(15 23 42 / 14%);
+}
+
+:root[data-theme="light"] .text-white {
+  color: #18181b;
+}
+
+:root[data-theme="light"] .text-zinc-100,
+:root[data-theme="light"] .text-zinc-200 {
+  color: #27272a;
+}
+
+:root[data-theme="light"] .text-zinc-300 {
+  color: #3f3f46;
+}
+
+:root[data-theme="light"] .text-zinc-400 {
+  color: #52525b;
+}
+
+:root[data-theme="light"] .text-zinc-500 {
+  color: #71717a;
+}
+
+:root[data-theme="light"] .text-zinc-600 {
+  color: #71717a;
+}
+
+:root[data-theme="light"] .text-zinc-700 {
+  color: #a1a1aa;
+}
+
+:root[data-theme="light"]
+  :is(
+    [class~="bg-white/[0.01]"],
+    [class~="bg-white/[0.015]"],
+    [class~="bg-white/[0.018]"],
+    [class~="bg-white/[0.02]"],
+    [class~="bg-white/[0.025]"],
+    [class~="bg-white/[0.03]"],
+    [class~="bg-white/[0.035]"],
+    [class~="bg-white/[0.04]"],
+    [class~="bg-white/[0.045]"],
+    [class~="bg-white/[0.05]"],
+    [class~="bg-white/[0.06]"],
+    [class~="bg-white/[0.07]"],
+    [class~="bg-white/[0.09]"],
+    [class~="bg-white/5"],
+    [class~="bg-white/10"],
+    [class~="bg-white/20"]
+  ) {
+  background-color: rgb(15 23 42 / 5%);
+}
+
+:root[data-theme="light"]
+  :is(
+    [class~="border-white/[0.05]"],
+    [class~="border-white/[0.055]"],
+    [class~="border-white/[0.06]"],
+    [class~="border-white/[0.07]"],
+    [class~="border-white/[0.075]"],
+    [class~="border-white/[0.08]"],
+    [class~="border-white/[0.09]"],
+    [class~="border-white/10"],
+    [class~="border-white/15"]
+  ) {
+  border-color: rgb(15 23 42 / 11%);
+}
+
+:root[data-theme="light"]
+  :is([class~="bg-black/10"], [class~="bg-black/15"], [class~="bg-black/20"]) {
+  background-color: rgb(15 23 42 / 4%);
+}
+
+:root[data-theme="light"] .bg-white.text-zinc-950 {
+  background: #18181b;
+  color: #fff;
+}
+
+:root[data-theme="light"] :is(.bg-brand-400, .bg-brand-500, .bg-rose-400, .bg-rose-500).text-white {
+  color: #fff;
+}
+
+:root[data-theme="light"]
+  .game-card
+  :is(.text-white, [class~="text-white/75"], [class~="text-white/80"]) {
+  color: #fff;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select {
+  color: #27272a;
+}
+
+:root[data-theme="light"] ::placeholder {
+  color: #a1a1aa;
 }
 
 button,
@@ -65,5 +187,10 @@ a {
   border: 3px solid transparent;
   border-radius: 999px;
   background: #31313a;
+  background-clip: padding-box;
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd0d9;
   background-clip: padding-box;
 }

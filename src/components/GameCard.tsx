@@ -11,7 +11,7 @@ export function GameCard({ game }: GameCardProps) {
   const cover = game.coverLocalPath ?? game.coverUrl;
 
   return (
-    <article className="group min-w-0">
+    <article className="game-card group min-w-0">
       <Link
         to={`/games/${game.id}`}
         className="relative block aspect-[5/7] overflow-hidden rounded-[18px] border border-white/[0.075] bg-zinc-900 shadow-[0_18px_55px_rgba(0,0,0,.18)] outline-none transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-white/15 group-hover:shadow-[0_25px_65px_rgba(0,0,0,.38)] focus-visible:ring-2 focus-visible:ring-brand-400"

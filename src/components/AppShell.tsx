@@ -4,7 +4,7 @@ import { LibraryMonitor } from "@/components/LibraryMonitor";
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-ink-950 text-zinc-100">
+    <div className="app-shell min-h-screen bg-ink-950 text-zinc-100">
       <LibraryMonitor />
       <AppSidebar />
       <main className="min-h-screen pb-24 md:ml-[228px] md:pb-0">

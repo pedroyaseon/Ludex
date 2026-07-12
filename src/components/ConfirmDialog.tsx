@@ -25,7 +25,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-white/[0.09] bg-[#111218] p-6 shadow-2xl">
+      <div className="theme-surface-strong w-full max-w-md rounded-3xl border border-white/[0.09] bg-[#111218] p-6 shadow-2xl">
         <div className="flex items-start gap-4">
           <span
             className={`grid size-11 shrink-0 place-items-center rounded-xl ${

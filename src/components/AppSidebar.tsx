@@ -12,7 +12,7 @@ const navigation = [
 export function AppSidebar() {
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[228px] flex-col border-r border-white/[0.055] bg-[#090a0e]/95 px-4 py-6 backdrop-blur-xl md:flex">
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-[228px] flex-col border-r border-white/[0.055] bg-[#090a0e]/95 px-4 py-6 backdrop-blur-xl md:flex">
         <LudexLogo className="px-2" />
         <nav className="mt-10 space-y-1" aria-label="Navegação principal">
           {navigation.map(({ label, to, icon: Icon }) => (
@@ -43,7 +43,7 @@ export function AppSidebar() {
         <p className="mt-auto px-2 text-[10px] text-zinc-700">Ludex Preview · v0.5.1</p>
       </aside>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">
+      <nav className="app-mobile-nav fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">
         {navigation.map(({ label, shortLabel, to, icon: Icon }) => (
           <NavLink
             key={to}
