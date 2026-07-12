@@ -6,19 +6,23 @@ interface ArcadiumLogoProps {
 }
 
 export function ArcadiumLogo({ compact = false, className }: ArcadiumLogoProps) {
+  if (compact) {
+    return (
+      <img
+        src="/arcadium-icon.png"
+        alt="Arcadium"
+        className={cn("size-10 rounded-xl", className)}
+      />
+    );
+  }
+
   return (
-    <div className={cn("flex items-center gap-3", className)} aria-label="Arcadium">
-      <img src="/arcadium-icon.png" alt="" className="size-10 rounded-xl" />
-      {!compact && (
-        <div>
-          <p className="text-[17px] leading-none font-bold tracking-[-0.03em] text-white">
-            Arcadium
-          </p>
-          <p className="mt-1 text-[9px] font-semibold tracking-[0.22em] text-zinc-500 uppercase">
-            Game Library
-          </p>
-        </div>
-      )}
+    <div className={cn("relative h-12 w-[180px] overflow-hidden", className)} aria-label="Arcadium">
+      <img
+        src="/arcadium-logo.png"
+        alt="Arcadium"
+        className="absolute -top-[27px] -left-[5px] w-[190px] max-w-none"
+      />
     </div>
   );
 }
