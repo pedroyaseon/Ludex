@@ -8,7 +8,6 @@ import {
   Heart,
   Info,
   Play,
-  Star,
   Images,
   Youtube,
   Square,
@@ -182,11 +181,6 @@ export function GameDetails() {
   async function handleRevealGameFile() {
     if (!game) return;
     await revealItemInDir(game.filePath);
-  }
-
-  async function handleOpenRawg() {
-    if (!game?.rawgUrl) return;
-    await openUrl(game.rawgUrl);
   }
 
   if (isLoading) {
@@ -373,7 +367,7 @@ export function GameDetails() {
                         { label: "Publicadora", value: game.publisher },
                         { label: "Lançamento", value: game.releasedAt },
                         {
-                          label: "Avaliação RAWG",
+                          label: "Avaliação",
                           value: game.rating ? `${game.rating.toFixed(1)} / 5` : undefined,
                         },
                         {
@@ -392,20 +386,6 @@ export function GameDetails() {
                         ))}
                     </dl>
                   </div>
-                  {game.rawgUrl && (
-                    <a
-                      href={game.rawgUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        void handleOpenRawg();
-                      }}
-                      className="inline-flex shrink-0 items-center gap-2 text-[11px] font-semibold text-zinc-500 hover:text-brand-300"
-                    >
-                      <Star size={14} /> Dados e imagens por RAWG
-                    </a>
-                  )}
                 </div>
               </section>
             )}
