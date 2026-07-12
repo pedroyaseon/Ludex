@@ -11,6 +11,7 @@ use std::{
 };
 
 const PS2_EXTENSIONS: [&str; 4] = [".iso", ".chd", ".bin", ".cue"];
+const PCSX2_FULLSCREEN_ARG: &str = "-fullscreen";
 const PCSX2_EXECUTABLE_CANDIDATES: [&str; 3] = ["pcsx2-qt.exe", "pcsx2.exe", "pcsx2-avx2.exe"];
 
 #[derive(Debug, Serialize)]
@@ -40,7 +41,7 @@ pub fn launch_game(
     let mut command = Command::new(&emulator);
 
     if fullscreen.unwrap_or(false) {
-        command.arg("--fullscreen");
+        command.arg(PCSX2_FULLSCREEN_ARG);
     }
 
     let child = command
@@ -159,5 +160,15 @@ fn is_supported_extension(platform: &str, extension: &str) -> bool {
     match platform {
         "PS2" => PS2_EXTENSIONS.contains(&extension),
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uses_the_supported_pcsx2_fullscreen_argument() {
+        assert_eq!(PCSX2_FULLSCREEN_ARG, "-fullscreen");
     }
 }
