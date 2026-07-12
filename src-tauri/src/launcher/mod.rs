@@ -1,7 +1,8 @@
 //! Native emulator process launcher boundary.
 //!
-//! Launching is intentionally done without a shell. Paths are canonicalized and
-//! game extensions are validated before a process is spawned.
+//! Launching is intentionally done without a shell. Paths are canonicalized,
+//! game extensions are validated, and custom profile arguments are passed as
+//! literal process arguments.
 
 use serde::Serialize;
 use std::{
@@ -25,6 +26,8 @@ pub fn launch_game(
     emulator_path: String,
     game_path: String,
     platform: String,
+    fullscreen: Option<bool>,
+    args: Option<Vec<String>>,
 ) -> Result<LaunchGameResult, String> {
     let platform = platform.trim().to_uppercase();
     if platform != "PS2" {
@@ -33,8 +36,15 @@ pub fn launch_game(
 
     let emulator = resolve_pcsx2_executable(&emulator_path)?;
     let game = resolve_game_file(&game_path, &platform)?;
+    let launch_args = validate_launch_args(args.unwrap_or_default())?;
+    let mut command = Command::new(&emulator);
 
-    let child = Command::new(&emulator)
+    if fullscreen.unwrap_or(false) {
+        command.arg("--fullscreen");
+    }
+
+    let child = command
+        .args(launch_args)
         .arg(&game)
         .spawn()
         .map_err(|error| format!("Não foi possível iniciar o PCSX2: {error}"))?;
@@ -101,6 +111,32 @@ fn resolve_game_file(path: &str, platform: &str) -> Result<PathBuf, String> {
     }
 
     Ok(canonical_path)
+}
+
+fn validate_launch_args(args: Vec<String>) -> Result<Vec<String>, String> {
+    if args.len() > 16 {
+        return Err("O perfil de execução possui argumentos demais.".into());
+    }
+
+    args.into_iter()
+        .map(|arg| {
+            let trimmed_arg = arg.trim();
+
+            if trimmed_arg.is_empty() {
+                return Err("Argumentos vazios não são permitidos.".into());
+            }
+
+            if trimmed_arg.len() > 160 {
+                return Err("Um dos argumentos do perfil é longo demais.".into());
+            }
+
+            if trimmed_arg.chars().any(char::is_control) {
+                return Err("Argumentos com caracteres de controle não são permitidos.".into());
+            }
+
+            Ok(trimmed_arg.to_string())
+        })
+        .collect()
 }
 
 fn validate_windows_executable(path: &Path) -> Result<(), String> {

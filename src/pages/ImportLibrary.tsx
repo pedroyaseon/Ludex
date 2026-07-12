@@ -15,6 +15,7 @@ import { gamesService } from "@/features/games/games.service";
 import { scannerService } from "@/features/library-scanner/scanner.service";
 import { supportedExtensions, type ScanResult } from "@/features/library-scanner/scanner.types";
 import { settingsService } from "@/features/settings/settings.service";
+import { nativeDialogs } from "@/lib/native-dialogs";
 
 export function ImportLibrary() {
   const navigate = useNavigate();
@@ -38,6 +39,13 @@ export function ImportLibrary() {
       setError(scanError instanceof Error ? scanError.message : String(scanError));
     } finally {
       setIsScanning(false);
+    }
+  }
+
+  async function handlePickFolder() {
+    const selectedFolder = await nativeDialogs.pickFolder(folderPath);
+    if (selectedFolder) {
+      setFolderPath(selectedFolder);
     }
   }
 
@@ -102,7 +110,8 @@ export function ImportLibrary() {
                   />
                   <button
                     type="button"
-                    title="Seletor nativo será integrado futuramente"
+                    onClick={() => void handlePickFolder()}
+                    title="Selecionar pasta"
                     className="grid size-12 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-white"
                   >
                     <FolderOpen size={18} />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   gamesService,
   type GameQuery,
+  type LibraryState,
   type LibrarySyncResult,
 } from "@/features/games/games.service";
 import type { Game } from "@/types/domain";
@@ -12,12 +13,17 @@ export function useGames(query: GameQuery = {}) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string>();
   const [lastSyncResult, setLastSyncResult] = useState<LibrarySyncResult>();
+  const [libraryState, setLibraryState] = useState<LibraryState>({ totalGames: 0 });
   const hasAutoSynced = useRef(false);
   const { search, platform, favoritesOnly } = query;
 
   const loadGames = useCallback(async () => {
-    const result = await gamesService.list({ search, platform, favoritesOnly });
+    const [result, state] = await Promise.all([
+      gamesService.list({ search, platform, favoritesOnly }),
+      gamesService.getLibraryState(),
+    ]);
     setGames(result);
+    setLibraryState(state);
   }, [favoritesOnly, platform, search]);
 
   useEffect(() => {
@@ -32,6 +38,7 @@ export function useGames(query: GameQuery = {}) {
     try {
       const syncResult = await gamesService.syncConfiguredLibrary("PS2");
       setLastSyncResult(syncResult);
+      if (syncResult?.state) setLibraryState(syncResult.state);
       await loadGames();
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : String(error));
@@ -46,5 +53,21 @@ export function useGames(query: GameQuery = {}) {
     void syncLibrary();
   }, [syncLibrary]);
 
-  return { games, isLoading, isSyncing, syncError, lastSyncResult, refresh: syncLibrary };
+  const clearLibrary = useCallback(async () => {
+    await gamesService.clear();
+    setLastSyncResult(undefined);
+    setLibraryState({ totalGames: 0 });
+    await loadGames();
+  }, [loadGames]);
+
+  return {
+    games,
+    isLoading,
+    isSyncing,
+    syncError,
+    lastSyncResult,
+    libraryState,
+    refresh: syncLibrary,
+    clearLibrary,
+  };
 }

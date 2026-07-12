@@ -1,4 +1,8 @@
 export function formatPlaytime(totalSeconds: number) {
+  if (totalSeconds <= 0) {
+    return "0 min";
+  }
+
   if (totalSeconds < 3600) {
     return `${Math.max(1, Math.round(totalSeconds / 60))} min`;
   }
