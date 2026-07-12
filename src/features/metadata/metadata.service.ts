@@ -1,26 +1,138 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { Platform } from "@/types/domain";
+import { igdbProvider } from "@/features/metadata/providers/igdb/igdb.provider";
+import { rawgProvider } from "@/features/metadata/providers/rawg/rawg.provider";
+import type { MetadataRequest } from "@/features/metadata/providers/metadata-provider";
+import type {
+  IgdbMetadataResult,
+  ProviderBundle,
+  RawgMetadataResult,
+} from "@/features/metadata/metadata.types";
+import { normalizeGameTitle } from "@/features/metadata/title-normalizer";
+import type { ComposedGameMetadata, GameArtwork, GameVideo } from "@/types/domain";
 
-export interface GameMetadata {
-  rawgId: number;
-  title: string;
-  description?: string;
-  releasedAt?: string;
-  coverUrl?: string;
-  genres: string[];
-  developers: string[];
-  publishers: string[];
-  rating?: number;
-  metacritic?: number;
-  rawgUrl: string;
-}
+const igdbImageUrl = (imageId: string, size: "cover_big" | "screenshot_big" = "cover_big") =>
+  `https://images.igdb.com/igdb/image/upload/t_${size}/${imageId}.jpg`;
+
+const youtubeVideo = (externalId: string, title?: string): GameVideo => ({
+  provider: "youtube",
+  externalId,
+  title,
+  watchUrl: `https://www.youtube.com/watch?v=${externalId}`,
+  embedUrl: `https://www.youtube.com/embed/${externalId}`,
+  thumbnailUrl: `https://img.youtube.com/vi/${externalId}/hqdefault.jpg`,
+});
+
+export const composeMetadata = (
+  bundle: ProviderBundle,
+  existing?: ComposedGameMetadata,
+  legacyCover?: string,
+): ComposedGameMetadata | undefined => {
+  const { rawg, igdb } = bundle;
+  if (!rawg && !igdb && !existing && !legacyCover) return undefined;
+  const igdbCover: GameArtwork | undefined = igdb?.cover
+    ? {
+        provider: "igdb",
+        type: "cover",
+        imageUrl: igdbImageUrl(igdb.cover.imageId),
+        width: igdb.cover.width,
+        height: igdb.cover.height,
+      }
+    : undefined;
+  const legacy: GameArtwork | undefined = legacyCover
+    ? { provider: "manual", type: "cover", imageUrl: legacyCover }
+    : undefined;
+  const background: GameArtwork | undefined = rawg?.backgroundUrl
+    ? { provider: "rawg", type: "background", imageUrl: rawg.backgroundUrl }
+    : igdb?.artworks[0]
+      ? {
+          provider: "igdb",
+          type: "background",
+          imageUrl: igdbImageUrl(igdb.artworks[0].imageId, "screenshot_big"),
+        }
+      : existing?.background;
+  const screenshots: GameArtwork[] = rawg?.screenshots.length
+    ? rawg.screenshots.map((item) => ({ provider: "rawg", type: "screenshot", ...item }))
+    : (igdb?.artworks.map((item) => ({
+        provider: "igdb",
+        type: "screenshot",
+        imageUrl: igdbImageUrl(item.imageId, "screenshot_big"),
+        width: item.width,
+        height: item.height,
+      })) ??
+      existing?.screenshots ??
+      []);
+  const releaseDate =
+    rawg?.releasedAt ??
+    (igdb?.releaseTimestamp
+      ? new Date(igdb.releaseTimestamp * 1000).toISOString().slice(0, 10)
+      : existing?.releaseDate);
+  return {
+    title: rawg?.title ?? igdb?.title ?? existing?.title ?? "",
+    description: rawg?.description ?? existing?.description,
+    summary: igdb?.summary ?? existing?.summary,
+    releaseDate,
+    releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : existing?.releaseYear,
+    genres: rawg?.genres.length
+      ? rawg.genres
+      : igdb?.genres.length
+        ? igdb.genres
+        : (existing?.genres ?? []),
+    developers: rawg?.developers.length
+      ? rawg.developers
+      : igdb?.developers.length
+        ? igdb.developers
+        : (existing?.developers ?? []),
+    publishers: rawg?.publishers.length
+      ? rawg.publishers
+      : igdb?.publishers.length
+        ? igdb.publishers
+        : (existing?.publishers ?? []),
+    rating: rawg?.rating ?? existing?.rating,
+    metacritic: rawg?.metacritic ?? existing?.metacritic,
+    cover: igdbCover ?? existing?.cover ?? legacy,
+    background,
+    screenshots,
+    videos:
+      igdb?.videos.map((item) => youtubeVideo(item.externalId, item.title)) ??
+      existing?.videos ??
+      [],
+    rawgId: rawg?.rawgId ?? existing?.rawgId,
+    igdbId: igdb?.igdbId ?? existing?.igdbId,
+    rawgUrl: rawg?.rawgUrl ?? existing?.rawgUrl,
+    metadataUpdatedAt: new Date().toISOString(),
+  };
+};
 
 export const metadataService = {
-  isConfigured(): Promise<boolean> {
-    return invoke<boolean>("is_rawg_configured");
+  async configuration() {
+    const [rawg, igdb] = await Promise.all([
+      rawgProvider.isConfigured().catch(() => false),
+      igdbProvider.isConfigured().catch(() => false),
+    ]);
+    return { rawg, igdb };
   },
-
-  fetch(title: string, platform: Platform): Promise<GameMetadata | null> {
-    return invoke<GameMetadata | null>("fetch_game_metadata", { title, platform });
+  async fetch(request: MetadataRequest): Promise<ProviderBundle> {
+    const normalized = { ...request, title: normalizeGameTitle(request.title) };
+    const configured = await this.configuration();
+    const tasks: Array<
+      Promise<{ provider: "rawg" | "igdb"; value: RawgMetadataResult | IgdbMetadataResult | null }>
+    > = [];
+    if (configured.rawg)
+      tasks.push(rawgProvider.fetch(normalized).then((value) => ({ provider: "rawg", value })));
+    if (configured.igdb)
+      tasks.push(igdbProvider.fetch(normalized).then((value) => ({ provider: "igdb", value })));
+    const settled = await Promise.allSettled(tasks);
+    const bundle: ProviderBundle = { errors: [] };
+    for (const result of settled) {
+      if (result.status === "rejected") {
+        bundle.errors.push(
+          result.reason instanceof Error ? result.reason.message : String(result.reason),
+        );
+        continue;
+      }
+      if (result.value.provider === "rawg")
+        bundle.rawg = result.value.value as RawgMetadataResult | undefined;
+      else bundle.igdb = result.value.value as IgdbMetadataResult | undefined;
+    }
+    return bundle;
   },
 };
