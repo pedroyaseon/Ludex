@@ -1,6 +1,6 @@
 [package]
 name = "ludex"
-version = "0.5.2"
+version = "0.5.3"
 description = "Modern desktop library for local emulated games"
 authors = ["Ludex Contributors"]
 edition = "2021"
