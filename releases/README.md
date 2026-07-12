@@ -17,3 +17,9 @@ rebranding para Arcadium.
 - `v0.6.0/Arcadium_0.6.0_portable.exe`
 - `v0.6.0/Arcadium_0.6.0_x64-setup.exe`
 - `v0.6.0/Arcadium_0.6.0_x64_en-US.msi`
+
+## v0.6.1 — Arcadium
+
+- `v0.6.1/Arcadium_0.6.1_portable.exe`
+- `v0.6.1/Arcadium_0.6.1_x64-setup.exe`
+- `v0.6.1/Arcadium_0.6.1_x64_en-US.msi`
