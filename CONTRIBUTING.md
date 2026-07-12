@@ -1,4 +1,4 @@
-# Contribuindo com o Ludex
+# Contribuindo com o Arcadium
 
 ## Antes de começar
 

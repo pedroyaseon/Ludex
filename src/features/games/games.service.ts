@@ -3,6 +3,7 @@ import { scannerService } from "@/features/library-scanner/scanner.service";
 import { composeMetadata, metadataService } from "@/features/metadata/metadata.service";
 import { normalizeGameTitle } from "@/features/metadata/title-normalizer";
 import { settingsService } from "@/features/settings/settings.service";
+import { readMigratedStorage } from "@/lib/storage-migration";
 import type { Game, Platform } from "@/types/domain";
 
 export interface GameQuery {
@@ -39,8 +40,10 @@ interface ImportScanOptions {
   pruneMissingFromSource?: boolean;
 }
 
-const libraryStorageKey = "ludex.library.games.v1";
-const libraryStateStorageKey = "ludex.library.state.v1";
+const libraryStorageKey = "arcadium.library.games.v1";
+const libraryStateStorageKey = "arcadium.library.state.v1";
+const legacyLibraryStorageKeys = ["ludex.library.games.v1"];
+const legacyLibraryStateStorageKeys = ["ludex.library.state.v1"];
 
 const wait = (milliseconds = 180) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
@@ -52,7 +55,7 @@ const normalizeForSearch = (value: string) =>
     .toLocaleLowerCase("pt-BR");
 
 const readStoredGames = (): Game[] => {
-  const rawValue = window.localStorage.getItem(libraryStorageKey);
+  const rawValue = readMigratedStorage(libraryStorageKey, legacyLibraryStorageKeys);
   if (!rawValue) return [];
 
   try {
@@ -68,7 +71,7 @@ const writeStoredGames = (games: Game[]) => {
 };
 
 const readLibraryState = (): LibraryState => {
-  const rawValue = window.localStorage.getItem(libraryStateStorageKey);
+  const rawValue = readMigratedStorage(libraryStateStorageKey, legacyLibraryStateStorageKeys);
   if (!rawValue) return { totalGames: readStoredGames().length };
 
   try {

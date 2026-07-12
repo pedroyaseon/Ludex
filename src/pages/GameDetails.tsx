@@ -448,7 +448,7 @@ export function GameDetails() {
                   ))}
                 </div>
                 <p className="mt-2 text-[10px] text-zinc-600">
-                  Vídeos externos referenciados pela IGDB. O Ludex não hospeda esse conteúdo.
+                  Vídeos externos referenciados pela IGDB. O Arcadium não hospeda esse conteúdo.
                 </p>
               </section>
             ) : null}
@@ -462,8 +462,8 @@ export function GameDetails() {
                   {formatPlaytime(elapsedSeconds)}
                 </p>
                 <p className="mt-1 text-[11px] text-emerald-100/45">
-                  O Ludex registra o tempo quando você clicar em Finalizar sessão. O emulador não é
-                  encerrado automaticamente.
+                  O Arcadium registra o tempo quando você clicar em Finalizar sessão. O emulador não
+                  é encerrado automaticamente.
                 </p>
               </div>
             )}

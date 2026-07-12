@@ -3,8 +3,8 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { gamesService } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 
-export const libraryUpdatedEvent = "ludex:library-updated";
-export const libraryMonitorStatusEvent = "ludex:library-monitor-status";
+export const libraryUpdatedEvent = "arcadium:library-updated";
+export const libraryMonitorStatusEvent = "arcadium:library-monitor-status";
 
 export type LibraryMonitorStatus = "starting" | "watching" | "syncing" | "error" | "idle";
 
@@ -72,12 +72,12 @@ export const libraryMonitorService = {
     });
 
     const handleSettingsChanged = () => void configure().catch(() => notifyStatus("error"));
-    window.addEventListener("ludex:settings-updated", handleSettingsChanged);
+    window.addEventListener("arcadium:settings-updated", handleSettingsChanged);
     void configure().catch(() => notifyStatus("error"));
 
     return () => {
       window.clearTimeout(debounceTimer);
-      window.removeEventListener("ludex:settings-updated", handleSettingsChanged);
+      window.removeEventListener("arcadium:settings-updated", handleSettingsChanged);
       unlisten?.();
     };
   },

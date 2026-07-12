@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { LudexLogo } from "@/components/LudexLogo";
+import { ArcadiumLogo } from "@/components/ArcadiumLogo";
 
 interface PageHeaderProps {
   eyebrow?: string;
@@ -12,7 +12,7 @@ export function PageHeader({ eyebrow, title, description, actions }: PageHeaderP
   return (
     <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
       <div>
-        <LudexLogo className="mb-7 md:hidden" />
+        <ArcadiumLogo className="mb-7 md:hidden" />
         {eyebrow && (
           <p className="mb-2 text-[11px] font-bold tracking-[0.18em] text-brand-300 uppercase">
             {eyebrow}

@@ -1,19 +1,19 @@
-# Ludex
+# Arcadium
 
-> **Ludex is a modern desktop game library for organizing and launching local emulated games.**
+> **Arcadium is a modern desktop library for organizing and launching local console games.**
 
-Ludex é uma biblioteca desktop moderna para organizar jogos locais de **PlayStation 2**, com suporte futuro a **PlayStation 3**, e iniciá-los por meio de emuladores configurados pelo usuário.
+Arcadium é uma biblioteca desktop moderna para organizar jogos locais de **PlayStation 2**, com suporte futuro a **PlayStation 3**, e iniciá-los por meio de emuladores configurados pelo usuário.
 
-O produto combina a praticidade de uma biblioteca como a Steam com a navegação visual de interfaces modernas de console. O usuário mantém seus próprios jogos no computador; o Ludex apenas organiza a coleção local e aciona o emulador configurado.
+O produto combina a praticidade de uma biblioteca como a Steam com a navegação visual de interfaces modernas de console. O usuário mantém seus próprios jogos no computador; o Arcadium apenas organiza a coleção local e aciona o emulador configurado.
 
 > [!IMPORTANT]
-> O escopo do Ludex começa em **PS2** com PCSX2. PS3 e RPCS3 fazem parte do roadmap. **PS1 não faz parte deste projeto.**
+> O escopo do Arcadium começa em **PS2** com PCSX2. PS3 e RPCS3 fazem parte do roadmap. **PS1 não faz parte deste projeto.**
 
 ## Estado atual
 
 Versão: `v0.6.0`.
 
-Nesta versão, o Ludex já possui o primeiro fluxo real local:
+Nesta versão, o Arcadium já possui o primeiro fluxo real local:
 
 - scanner nativo de arquivos PS2 via Tauri/Rust;
 - importação de `.iso`, `.chd`, `.bin` e `.cue`;
@@ -65,8 +65,8 @@ Consulte também os [pré-requisitos oficiais do Tauri](https://v2.tauri.app/sta
 ### Instalação
 
 ```bash
-git clone https://github.com/pedroyaseon/Ludex.git
-cd Ludex
+git clone https://github.com/pedroyaseon/Arcadium.git
+cd Arcadium
 npm install
 ```
 
@@ -81,7 +81,7 @@ TWITCH_CLIENT_SECRET=seu_client_secret_da_twitch
 Use o arquivo versionado `.env.example` como referência. Obtenha sua chave em
 [RAWG API](https://rawg.io/apidocs). O arquivo `.env` é ignorado pelo Git e nunca deve ser
 commitado.
-Depois de alterar a chave, reinicie o Ludex para recarregar a variável com segurança.
+Depois de alterar a chave, reinicie o Arcadium para recarregar a variável com segurança.
 
 ```bash
 npm run dev
@@ -102,7 +102,7 @@ npm run dev:web
    ```
 
 2. Mantenha **Detectar jogos automaticamente** ligado.
-3. Abra a **Biblioteca**. O Ludex passa a monitorar a pasta e reflete adições e remoções automaticamente.
+3. Abra a **Biblioteca**. O Arcadium passa a monitorar a pasta e reflete adições e remoções automaticamente.
 4. Se precisar reconstruir o índice, use **Importação manual** para forçar uma sincronização.
 5. Confirme o caminho do PCSX2, por exemplo:
 
@@ -110,13 +110,13 @@ npm run dev:web
    F:\PCSX2
    ```
 
-   O Ludex aceita a pasta do PCSX2 ou o executável direto, como `pcsx2-qt.exe`.
+   O Arcadium aceita a pasta do PCSX2 ou o executável direto, como `pcsx2-qt.exe`.
 
 6. Abra um jogo e clique em **Jogar**.
 
 ## Segurança local
 
-O Ludex foi ajustado para manter uma superfície segura nesta etapa:
+O Arcadium foi ajustado para manter uma superfície segura nesta etapa:
 
 - não usa shell para abrir emuladores;
 - valida se o caminho do PCSX2 existe;
@@ -133,15 +133,25 @@ O Ludex foi ajustado para manter uma superfície segura nesta etapa:
 - aplica CSP para restringir conexões e conteúdo remoto do webview;
 - consulta apenas o título e a plataforma do jogo; caminhos locais nunca são enviados à RAWG.
 
-## Metadados RAWG
+## Compatibilidade após o rebranding
 
-Ao detectar um jogo sem metadados, o Ludex pesquisa uma correspondência de PlayStation 2 na RAWG e
-salva localmente apenas os campos necessários: título, capa, descrição, lançamento, gêneros,
-desenvolvedores, publicadoras, avaliação RAWG e Metacritic. Falhas individuais não interrompem o
-scanner e novas tentativas automáticas respeitam um intervalo de 24 horas.
+Na primeira leitura, o Arcadium procura dados nas novas chaves `arcadium.*`. Quando elas ainda não
+existem, o aplicativo copia automaticamente os valores das chaves legadas `ludex.*`, sem apagar a
+origem. A biblioteca, as configurações, os perfis de inicialização e as sessões existentes são
+preservados. Antes de criar a janela, o backend também copia dados ausentes do diretório legado
+`com.ludex.desktop` para `com.arcadium.app`, ignorando links simbólicos e sem sobrescrever arquivos.
+As referências antigas permanecem no código exclusivamente para essa migração compatível.
 
-A API exige atribuição. As telas que exibem dados ou imagens apresentam um link ativo para a RAWG.
-Consulte os [termos e a documentação oficial](https://api.rawg.io/docs/).
+## Metadados IGDB e RAWG
+
+Ao detectar um jogo sem metadados, o Arcadium pesquisa uma correspondência de PlayStation 2. O IGDB
+é a fonte primária de título, capa, descrição, lançamento, gêneros, desenvolvedoras, publicadoras e
+avaliações. A RAWG funciona como fallback desses campos e como fonte primária de screenshots. Falhas
+individuais não interrompem o scanner e novas tentativas automáticas respeitam um intervalo de 24
+horas.
+
+Consulte os termos e a documentação oficial da [IGDB](https://api-docs.igdb.com/) e da
+[RAWG](https://api.rawg.io/docs/).
 
 ## Estratégia de mídia RAWG + IGDB
 
@@ -289,7 +299,7 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 ## Estrutura do projeto
 
 ```text
-Ludex/
+Arcadium/
 ├── public/
 │   └── covers/                 # artes locais usadas por fixtures/dev
 ├── src/
@@ -353,6 +363,6 @@ O checklist e o conteúdo mínimo estão em [`.github/pull_request_template.md`]
 
 ## Aviso legal
 
-Ludex é um organizador e launcher independente. O projeto não é afiliado, aprovado ou patrocinado pela Sony Interactive Entertainment, PCSX2, RPCS3 ou pelos detentores dos jogos exibidos.
+Arcadium é um organizador e launcher independente. O projeto não é afiliado, aprovado ou patrocinado pela Sony Interactive Entertainment, PCSX2, RPCS3 ou pelos detentores dos jogos exibidos.
 
-O Ludex não fornece, hospeda, baixa ou distribui ROMs, ISOs, BIOS, firmware, chaves, jogos ou emuladores. O usuário é responsável por obter e utilizar todo conteúdo de acordo com a legislação aplicável, as licenças dos softwares e os direitos autorais. Use apenas dumps e arquivos que você tenha direito legal de utilizar.
+O Arcadium não fornece, hospeda, baixa ou distribui ROMs, ISOs, BIOS, firmware, chaves, jogos ou emuladores. O usuário é responsável por obter e utilizar todo conteúdo de acordo com a legislação aplicável, as licenças dos softwares e os direitos autorais. Use apenas dumps e arquivos que você tenha direito legal de utilizar.
