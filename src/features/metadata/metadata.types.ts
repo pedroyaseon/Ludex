@@ -26,6 +26,8 @@ export interface IgdbMetadataResult {
   cover?: { imageId: string; width?: number; height?: number };
   artworks: Array<{ imageId: string; width?: number; height?: number }>;
   videos: Array<{ externalId: string; title?: string }>;
+  rating?: number;
+  metacritic?: number;
   confidence: number;
 }
 

@@ -1,6 +1,7 @@
 export const normalizeGameTitle = (value: string) =>
   value
-    .replace(/\[[^\]]*]|\([^)]*(?:USA|Europe|Japan|Disc|Disk|Rev)[^)]*\)/gi, " ")
+    .replace(/\.(iso|chd|bin|cue|pkg)$/i, "")
+    .replace(/\[[^\]]*]|\([^)]*\)/g, " ")
     .replace(/[._-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()

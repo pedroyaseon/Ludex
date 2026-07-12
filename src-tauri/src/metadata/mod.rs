@@ -52,10 +52,16 @@ struct RawgGameDetails {
 }
 
 #[derive(Debug, Deserialize)]
-struct RawgScreenshotsResponse { results: Vec<RawgScreenshot> }
+struct RawgScreenshotsResponse {
+    results: Vec<RawgScreenshot>,
+}
 
 #[derive(Debug, Deserialize)]
-struct RawgScreenshot { image: String, width: Option<u32>, height: Option<u32> }
+struct RawgScreenshot {
+    image: String,
+    width: Option<u32>,
+    height: Option<u32>,
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,7 +82,11 @@ pub struct GameMetadata {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RawgMedia { image_url: String, width: Option<u32>, height: Option<u32> }
+pub struct RawgMedia {
+    image_url: String,
+    width: Option<u32>,
+    height: Option<u32>,
+}
 
 #[tauri::command]
 pub fn is_rawg_configured() -> bool {
@@ -84,7 +94,10 @@ pub fn is_rawg_configured() -> bool {
 }
 
 #[tauri::command]
-pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Option<GameMetadata>, String> {
+pub async fn fetch_game_metadata(
+    title: String,
+    platform: String,
+) -> Result<Option<GameMetadata>, String> {
     if platform.trim().to_uppercase() != "PS2" {
         return Err("Metadados RAWG estão disponíveis apenas para PS2 nesta versão.".into());
     }
@@ -99,17 +112,13 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
         .map_err(|_| "Não foi possível preparar a conexão com a RAWG.".to_string())?;
 
     let search_url = format!("{RAWG_API_BASE}/games");
-    let search: RawgSearchResponse = get_json(
-        client
-            .get(search_url)
-            .query(&[
-                ("key", api_key.as_str()),
-                ("search", query.as_str()),
-                ("search_precise", "true"),
-                ("platforms", RAWG_PS2_PLATFORM_ID),
-                ("page_size", "5"),
-            ]),
-    )
+    let search: RawgSearchResponse = get_json(client.get(search_url).query(&[
+        ("key", api_key.as_str()),
+        ("search", query.as_str()),
+        ("search_precise", "true"),
+        ("platforms", RAWG_PS2_PLATFORM_ID),
+        ("page_size", "5"),
+    ]))
     .await?;
 
     let candidate = search
@@ -130,25 +139,28 @@ pub async fn fetch_game_metadata(title: String, platform: String) -> Result<Opti
     }
 
     let details_url = format!("{RAWG_API_BASE}/games/{}", candidate.id);
-    let details: RawgGameDetails = get_json(
-        client
-            .get(details_url)
-            .query(&[("key", api_key.as_str())]),
-    )
-    .await?;
+    let details: RawgGameDetails =
+        get_json(client.get(details_url).query(&[("key", api_key.as_str())])).await?;
 
     let screenshots_url = format!("{RAWG_API_BASE}/games/{}/screenshots", candidate.id);
     let screenshots = get_json::<RawgScreenshotsResponse>(
-        client.get(screenshots_url).query(&[("key", api_key.as_str()), ("page_size", "12")]),
-    ).await.unwrap_or(RawgScreenshotsResponse { results: Vec::new() });
+        client
+            .get(screenshots_url)
+            .query(&[("key", api_key.as_str()), ("page_size", "12")]),
+    )
+    .await
+    .unwrap_or(RawgScreenshotsResponse {
+        results: Vec::new(),
+    });
 
     Ok(Some(map_metadata(details, screenshots.results)))
 }
 
 fn load_api_key() -> Result<String, String> {
     dotenvy::dotenv().ok();
-    let api_key = env::var("RAWG_API_KEY")
-        .map_err(|_| "RAWG_API_KEY não configurada. Adicione a chave ao arquivo .env.".to_string())?;
+    let api_key = env::var("RAWG_API_KEY").map_err(|_| {
+        "RAWG_API_KEY não configurada. Adicione a chave ao arquivo .env.".to_string()
+    })?;
     let api_key = api_key.trim();
 
     if api_key.len() < 16 || api_key.len() > 160 || api_key.chars().any(char::is_control) {
@@ -171,9 +183,9 @@ fn sanitize_query(title: &str) -> Result<String, String> {
 
 fn is_ps2_game(game: &RawgSearchGame) -> bool {
     game.platforms.as_ref().is_some_and(|platforms| {
-        platforms.iter().any(|entry| {
-            entry.platform.name.eq_ignore_ascii_case("PlayStation 2")
-        })
+        platforms
+            .iter()
+            .any(|entry| entry.platform.name.eq_ignore_ascii_case("PlayStation 2"))
     })
 }
 
@@ -211,7 +223,9 @@ async fn get_json<T: DeserializeOwned>(request: reqwest::RequestBuilder) -> Resu
         return Err("Limite de requisições da RAWG atingido. Tente novamente mais tarde.".into());
     }
     if !status.is_success() {
-        return Err(format!("A RAWG retornou uma resposta inesperada ({status})."));
+        return Err(format!(
+            "A RAWG retornou uma resposta inesperada ({status})."
+        ));
     }
 
     let bytes = response
@@ -238,7 +252,17 @@ fn map_metadata(details: RawgGameDetails, screenshots: Vec<RawgScreenshot>) -> G
         description,
         released_at: details.released.filter(|value| value.len() == 10),
         background_url: details.background_image.and_then(validate_image_url),
-        screenshots: screenshots.into_iter().filter_map(|item| validate_image_url(item.image).map(|image_url| RawgMedia { image_url, width: item.width, height: item.height })).take(12).collect(),
+        screenshots: screenshots
+            .into_iter()
+            .filter_map(|item| {
+                validate_image_url(item.image).map(|image_url| RawgMedia {
+                    image_url,
+                    width: item.width,
+                    height: item.height,
+                })
+            })
+            .take(12)
+            .collect(),
         genres: names(details.genres, 6),
         developers: names(details.developers, 6),
         publishers: names(details.publishers, 6),
@@ -315,7 +339,10 @@ mod tests {
     #[test]
     fn sanitizes_slugs_and_html_fallbacks() {
         assert_eq!(safe_slug("god-of-war?<script>"), "god-of-warscript");
-        assert_eq!(strip_html("<p>Safe <strong>text</strong></p>".into()), "Safe text");
+        assert_eq!(
+            strip_html("<p>Safe <strong>text</strong></p>".into()),
+            "Safe text"
+        );
     }
 
     #[test]

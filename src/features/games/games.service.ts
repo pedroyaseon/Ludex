@@ -294,10 +294,14 @@ export const gamesService = {
     const retryThreshold = Date.now() - 24 * 60 * 60 * 1000;
     const candidates = readStoredGames()
       .filter((game) => {
-        const needsMigration = !game.metadata || (game.metadata.schemaVersion ?? 0) < 2;
+        const needsMigration = !game.metadata || (game.metadata.schemaVersion ?? 0) < 3;
         const needsRawg = configuration.rawg && !game.metadata?.rawgId;
         const needsIgdb = configuration.igdb && !game.metadata?.igdbId;
-        if (needsMigration || needsRawg || needsIgdb) return true;
+        if (needsMigration) return true;
+        const canRetryProvider =
+          !game.metadataLastAttemptAt ||
+          new Date(game.metadataLastAttemptAt).getTime() < retryThreshold;
+        if (needsRawg || needsIgdb) return canRetryProvider;
         if (game.metadataStatus === "matched" && game.metadata?.metadataUpdatedAt) {
           return new Date(game.metadata.metadataUpdatedAt).getTime() < retryThreshold;
         }

@@ -40,14 +40,14 @@ export const composeMetadata = (
   const legacy: GameArtwork | undefined = legacyCover
     ? { provider: "manual", type: "cover", imageUrl: legacyCover }
     : undefined;
-  const background: GameArtwork | undefined = rawg?.backgroundUrl
-    ? { provider: "rawg", type: "background", imageUrl: rawg.backgroundUrl }
-    : igdb?.artworks[0]
-      ? {
-          provider: "igdb",
-          type: "background",
-          imageUrl: igdbImageUrl(igdb.artworks[0].imageId, "screenshot_big"),
-        }
+  const background: GameArtwork | undefined = igdb?.artworks[0]
+    ? {
+        provider: "igdb",
+        type: "background",
+        imageUrl: igdbImageUrl(igdb.artworks[0].imageId, "screenshot_big"),
+      }
+    : rawg?.backgroundUrl
+      ? { provider: "rawg", type: "background", imageUrl: rawg.backgroundUrl }
       : existing?.background;
   const screenshots: GameArtwork[] = rawg?.screenshots.length
     ? rawg.screenshots.map((item) => ({ provider: "rawg", type: "screenshot", ...item }))
@@ -60,35 +60,33 @@ export const composeMetadata = (
       })) ??
       existing?.screenshots ??
       []);
-  const releaseDate =
-    rawg?.releasedAt ??
-    (igdb?.releaseTimestamp
-      ? new Date(igdb.releaseTimestamp * 1000).toISOString().slice(0, 10)
-      : existing?.releaseDate);
+  const releaseDate = igdb?.releaseTimestamp
+    ? new Date(igdb.releaseTimestamp * 1000).toISOString().slice(0, 10)
+    : (rawg?.releasedAt ?? existing?.releaseDate);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     title: igdb?.title ?? rawg?.title ?? existing?.title ?? "",
     description: igdb?.summary ?? rawg?.description ?? existing?.description,
     summary: igdb?.summary ?? existing?.summary,
     releaseDate,
     releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : existing?.releaseYear,
-    genres: rawg?.genres.length
-      ? rawg.genres
-      : igdb?.genres.length
-        ? igdb.genres
+    genres: igdb?.genres.length
+      ? igdb.genres
+      : rawg?.genres.length
+        ? rawg.genres
         : (existing?.genres ?? []),
-    developers: rawg?.developers.length
-      ? rawg.developers
-      : igdb?.developers.length
-        ? igdb.developers
+    developers: igdb?.developers.length
+      ? igdb.developers
+      : rawg?.developers.length
+        ? rawg.developers
         : (existing?.developers ?? []),
-    publishers: rawg?.publishers.length
-      ? rawg.publishers
-      : igdb?.publishers.length
-        ? igdb.publishers
+    publishers: igdb?.publishers.length
+      ? igdb.publishers
+      : rawg?.publishers.length
+        ? rawg.publishers
         : (existing?.publishers ?? []),
-    rating: rawg?.rating ?? existing?.rating,
-    metacritic: rawg?.metacritic ?? existing?.metacritic,
+    rating: igdb?.rating ?? rawg?.rating ?? existing?.rating,
+    metacritic: igdb?.metacritic ?? rawg?.metacritic ?? existing?.metacritic,
     cover: igdbCover ?? existing?.cover ?? legacy,
     background,
     screenshots,
