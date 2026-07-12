@@ -5,6 +5,7 @@ import {
   Gamepad2,
   Globe2,
   Monitor,
+  KeyRound,
   Save,
   ShieldCheck,
   Trash2,
@@ -15,6 +16,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { gamesService, type LibraryState } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 import { nativeDialogs } from "@/lib/native-dialogs";
+import { metadataService } from "@/features/metadata/metadata.service";
 import type { AppSettings } from "@/features/settings/settings.types";
 
 const sections = [
@@ -31,10 +33,15 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [libraryCleared, setLibraryCleared] = useState(false);
   const [isClearLibraryDialogOpen, setIsClearLibraryDialogOpen] = useState(false);
+  const [rawgConfigured, setRawgConfigured] = useState(false);
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
     void gamesService.getLibraryState().then(setLibraryState);
+    void metadataService
+      .isConfigured()
+      .then(setRawgConfigured)
+      .catch(() => setRawgConfigured(false));
   }, []);
 
   async function handleSave() {
@@ -379,6 +386,29 @@ export function Settings() {
             {activeSection === "general" && (
               <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
                 <h2 className="text-base font-semibold text-white">Geral</h2>
+                <div className="mt-6 flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-black/10 p-4">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-400/10 text-brand-300">
+                    <KeyRound size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-xs font-semibold text-zinc-300">Metadados RAWG</h3>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                          rawgConfigured
+                            ? "bg-emerald-400/10 text-emerald-300"
+                            : "bg-amber-400/10 text-amber-300"
+                        }`}
+                      >
+                        {rawgConfigured ? "Configurada" : "Chave ausente"}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-600">
+                      Configure <code>RAWG_API_KEY</code> no arquivo <code>.env</code> local. A
+                      chave é lida apenas pelo backend Rust e não é exposta à interface.
+                    </p>
+                  </div>
+                </div>
                 <div className="mt-6 divide-y divide-white/[0.06]">
                   {[
                     {

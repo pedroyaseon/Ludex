@@ -1,5 +1,6 @@
 mod commands;
 mod launcher;
+mod metadata;
 mod native_dialogs;
 mod scanner;
 
@@ -13,6 +14,8 @@ pub fn run() {
             scanner::scan_library_folder,
             scanner::watch_library_folder,
             launcher::launch_game,
+            metadata::fetch_game_metadata,
+            metadata::is_rawg_configured,
             native_dialogs::pick_folder,
             native_dialogs::pick_executable
         ])

@@ -1,21 +1,26 @@
-import type { Game, Platform } from "@/types/domain";
+import { invoke } from "@tauri-apps/api/core";
+import type { Platform } from "@/types/domain";
 
-export interface MetadataSuggestion {
+export interface GameMetadata {
+  rawgId: number;
   title: string;
-  platform: Platform;
-  releaseYear?: number;
-  genre?: string;
-  confidence: number;
+  description?: string;
+  releasedAt?: string;
+  coverUrl?: string;
+  genres: string[];
+  developers: string[];
+  publishers: string[];
+  rating?: number;
+  metacritic?: number;
+  rawgUrl: string;
 }
 
 export const metadataService = {
-  async suggest(game: Pick<Game, "fileName" | "platform">): Promise<MetadataSuggestion> {
-    const title = game.fileName.replace(/\.(iso|chd|bin|cue|pkg)$/i, "").replace(/[._-]+/g, " ");
+  isConfigured(): Promise<boolean> {
+    return invoke<boolean>("is_rawg_configured");
+  },
 
-    return {
-      title,
-      platform: game.platform,
-      confidence: 0.72,
-    };
+  fetch(title: string, platform: Platform): Promise<GameMetadata | null> {
+    return invoke<GameMetadata | null>("fetch_game_metadata", { title, platform });
   },
 };

@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.5.2`.
+Versão: `v0.5.3`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -26,6 +26,8 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - interface da biblioteca mais limpa, visual e orientada às capas;
 - sincronização manual forçada disponível na área **Importação manual**;
 - temas escuro, claro e automático conforme o sistema;
+- capas e metadados de jogos obtidos pela RAWG;
+- enriquecimento automático e atualização manual por jogo;
 - limpeza segura do índice local sem apagar arquivos de jogos;
 - seletor nativo para pasta da biblioteca e executável do PCSX2;
 - perfis locais de execução por jogo com fullscreen e argumentos extras seguros;
@@ -65,6 +67,20 @@ Consulte também os [pré-requisitos oficiais do Tauri](https://v2.tauri.app/sta
 git clone https://github.com/pedroyaseon/Ludex.git
 cd Ludex
 npm install
+```
+
+Crie um arquivo `.env` na raiz do projeto antes de iniciar o aplicativo:
+
+```dotenv
+RAWG_API_KEY=sua_chave_da_rawg
+```
+
+Use o arquivo versionado `.env.example` como referência. Obtenha sua chave em
+[RAWG API](https://rawg.io/apidocs). O arquivo `.env` é ignorado pelo Git e nunca deve ser
+commitado.
+Depois de alterar a chave, reinicie o Ludex para recarregar a variável com segurança.
+
+```bash
 npm run dev
 ```
 
@@ -106,7 +122,23 @@ O Ludex foi ajustado para manter uma superfície segura nesta etapa:
 - permite apenas extensões PS2 suportadas: `.iso`, `.chd`, `.bin`, `.cue`;
 - ignora symlinks durante o scanner;
 - não move, altera, extrai, faz upload ou baixa arquivos de jogos;
-- não envia biblioteca, caminhos locais ou metadados para servidores externos.
+- não envia a biblioteca completa nem caminhos locais para servidores externos;
+- mantém `RAWG_API_KEY` somente no backend Rust, fora do bundle Vite e do `localStorage`;
+- usa HTTPS obrigatório, timeout e limite de tamanho para respostas RAWG;
+- valida URLs de imagens e permite apenas hosts HTTPS da RAWG;
+- limita e sanitiza títulos antes das consultas;
+- aplica CSP para restringir conexões e conteúdo remoto do webview;
+- consulta apenas o título e a plataforma do jogo; caminhos locais nunca são enviados à RAWG.
+
+## Metadados RAWG
+
+Ao detectar um jogo sem metadados, o Ludex pesquisa uma correspondência de PlayStation 2 na RAWG e
+salva localmente apenas os campos necessários: título, capa, descrição, lançamento, gêneros,
+desenvolvedores, publicadoras, avaliação RAWG e Metacritic. Falhas individuais não interrompem o
+scanner e novas tentativas automáticas respeitam um intervalo de 24 horas.
+
+A API exige atribuição. As telas que exibem dados ou imagens apresentam um link ativo para a RAWG.
+Consulte os [termos e a documentação oficial](https://api.rawg.io/docs/).
 
 ## Scripts
 
@@ -119,6 +151,7 @@ O Ludex foi ajustado para manter uma superfície segura nesta etapa:
 | `npm run lint`         | executa ESLint em todo o frontend                   |
 | `npm run typecheck`    | executa o compilador TypeScript sem emitir arquivos |
 | `npm run check:rust`   | valida o crate Tauri no ambiente MSVC do Windows    |
+| `npm run test:rust`    | executa testes unitários do backend Rust            |
 | `npm run format`       | formata o projeto com Prettier                      |
 | `npm run format:check` | verifica formatação sem alterar arquivos            |
 
@@ -205,6 +238,17 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] aplicar a preferência de aparência imediatamente;
 - [x] remover o contador ao lado do título da biblioteca;
 - [x] remover o indicador visual de biblioteca ao vivo.
+
+### v0.5.3 — Capas e metadados RAWG
+
+- [x] integrar a RAWG por command Rust sem expor a chave ao frontend;
+- [x] configurar `RAWG_API_KEY` via `.env` local;
+- [x] enriquecer automaticamente jogos sem metadados;
+- [x] permitir atualização manual das informações por jogo;
+- [x] exibir capa, descrição, lançamento, gêneros, estúdio, publicadora e avaliações;
+- [x] adicionar atribuição obrigatória e link ativo para a RAWG;
+- [x] aplicar timeout, limites de resposta, validação de URLs e CSP;
+- [x] adicionar testes Rust para sanitização e URLs permitidas.
 
 ### Próximas versões
 

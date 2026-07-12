@@ -8,10 +8,12 @@ import {
   Heart,
   Info,
   Play,
+  RefreshCw,
+  Star,
   Square,
   Settings2,
 } from "lucide-react";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -41,6 +43,8 @@ export function GameDetails() {
   const [activeSession, setActiveSession] = useState<ActivePlaySession>();
   const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
+  const [metadataMessage, setMetadataMessage] = useState<string>();
 
   useEffect(() => {
     let isActive = true;
@@ -168,6 +172,30 @@ export function GameDetails() {
     await revealItemInDir(game.filePath);
   }
 
+  async function handleFetchMetadata() {
+    if (!game || isFetchingMetadata) return;
+    setIsFetchingMetadata(true);
+    setMetadataMessage(undefined);
+    try {
+      const updatedGame = await gamesService.enrichMetadata(game.id);
+      if (updatedGame) setGame(updatedGame);
+      setMetadataMessage(
+        updatedGame?.metadataStatus === "matched"
+          ? "Informações atualizadas pela RAWG."
+          : "Nenhuma correspondência de PS2 foi encontrada na RAWG.",
+      );
+    } catch (error) {
+      setMetadataMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsFetchingMetadata(false);
+    }
+  }
+
+  async function handleOpenRawg() {
+    if (!game?.rawgUrl) return;
+    await openUrl(game.rawgUrl);
+  }
+
   if (isLoading) {
     return <div className="min-h-screen animate-pulse bg-white/[0.02]" />;
   }
@@ -263,6 +291,23 @@ export function GameDetails() {
             <p className="mt-4 text-sm font-medium text-zinc-500">{game.genre}</p>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-zinc-400">{game.description}</p>
 
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void handleFetchMetadata()}
+                disabled={isFetchingMetadata}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3.5 text-xs font-semibold text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <RefreshCw size={15} className={isFetchingMetadata ? "animate-spin" : ""} />
+                {isFetchingMetadata
+                  ? "Consultando RAWG..."
+                  : game.metadataStatus === "matched"
+                    ? "Atualizar informações"
+                    : "Buscar informações"}
+              </button>
+              {metadataMessage && <span className="text-xs text-zinc-500">{metadataMessage}</span>}
+            </div>
+
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -337,6 +382,56 @@ export function GameDetails() {
                 </div>
               ))}
             </dl>
+
+            {game.metadataStatus === "matched" && (
+              <section className="mt-5 max-w-3xl rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold tracking-[0.14em] text-brand-300 uppercase">
+                      Informações do jogo
+                    </p>
+                    <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                      {[
+                        { label: "Desenvolvedor", value: game.developer },
+                        { label: "Publicadora", value: game.publisher },
+                        { label: "Lançamento", value: game.releasedAt },
+                        {
+                          label: "Avaliação RAWG",
+                          value: game.rating ? `${game.rating.toFixed(1)} / 5` : undefined,
+                        },
+                        {
+                          label: "Metacritic",
+                          value: game.metacritic ? String(game.metacritic) : undefined,
+                        },
+                      ]
+                        .filter((item) => item.value)
+                        .map((item) => (
+                          <div key={item.label}>
+                            <dt className="text-[10px] text-zinc-600">{item.label}</dt>
+                            <dd className="mt-1 text-xs font-semibold text-zinc-300">
+                              {item.value}
+                            </dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </div>
+                  {game.rawgUrl && (
+                    <a
+                      href={game.rawgUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void handleOpenRawg();
+                      }}
+                      className="inline-flex shrink-0 items-center gap-2 text-[11px] font-semibold text-zinc-500 hover:text-brand-300"
+                    >
+                      <Star size={14} /> Dados e imagens por RAWG
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
 
             {activeSession && (
               <div className="mt-5 max-w-3xl rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.035] p-4">

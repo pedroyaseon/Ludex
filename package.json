@@ -1,7 +1,7 @@
 {
   "name": "ludex",
   "private": true,
-  "version": "0.5.2",
+  "version": "0.5.3",
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "check:rust": "scripts\\cargo-check.cmd",
+    "test:rust": "scripts\\cargo-test.cmd",
     "tauri": "tauri"
   },
   "dependencies": {
