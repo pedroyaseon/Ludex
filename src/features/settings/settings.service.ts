@@ -44,6 +44,7 @@ const readSettings = (): AppSettings => {
 
 const writeSettings = (settings: AppSettings) => {
   window.localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
+  window.dispatchEvent(new Event("ludex:settings-updated"));
 };
 
 export const settingsService = {

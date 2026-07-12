@@ -3,16 +3,78 @@
 //! The scanner only indexes file references. It does not mutate, execute or
 //! inspect game file contents.
 
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::{
     fs,
     path::{Path, PathBuf},
+    sync::Mutex,
     time::Instant,
 };
+use tauri::{AppHandle, Emitter, State};
 
 const MAX_SCANNED_FILES: usize = 5_000;
 const MAX_RECURSION_DEPTH: usize = 24;
 const PS2_EXTENSIONS: [&str; 4] = [".iso", ".chd", ".bin", ".cue"];
+
+pub struct LibraryWatcherState(pub Mutex<Option<RecommendedWatcher>>);
+
+impl Default for LibraryWatcherState {
+    fn default() -> Self {
+        Self(Mutex::new(None))
+    }
+}
+
+#[tauri::command]
+pub fn watch_library_folder(
+    app: AppHandle,
+    state: State<'_, LibraryWatcherState>,
+    folder_path: String,
+    recursive: bool,
+) -> Result<(), String> {
+    let requested_path = folder_path.trim();
+    if requested_path.is_empty() {
+        return Err("Informe uma pasta válida para monitorar.".into());
+    }
+
+    let canonical_root = PathBuf::from(requested_path)
+        .canonicalize()
+        .map_err(|_| "A pasta informada não existe ou não pode ser acessada.".to_string())?;
+
+    if !canonical_root.is_dir() {
+        return Err("O caminho monitorado precisa ser uma pasta.".into());
+    }
+
+    let event_app = app.clone();
+    let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
+        let Ok(event) = result else { return };
+        if matches!(
+            event.kind,
+            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)
+        ) {
+            let _ = event_app.emit("library://changed", ());
+        }
+    })
+    .map_err(|error| format!("Não foi possível iniciar o monitoramento: {error}"))?;
+
+    watcher
+        .watch(
+            &canonical_root,
+            if recursive {
+                RecursiveMode::Recursive
+            } else {
+                RecursiveMode::NonRecursive
+            },
+        )
+        .map_err(|error| format!("Não foi possível monitorar a pasta: {error}"))?;
+
+    let mut active_watcher = state
+        .0
+        .lock()
+        .map_err(|_| "O monitor da biblioteca está indisponível.".to_string())?;
+    *active_watcher = Some(watcher);
+    Ok(())
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
