@@ -1,6 +1,6 @@
 import { Library, RefreshCw, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { LudexLogo } from "@/components/LudexLogo";
+import { ArcadiumLogo } from "@/components/ArcadiumLogo";
 import { cn } from "@/lib/cn";
 
 const navigation = [
@@ -13,7 +13,7 @@ export function AppSidebar() {
   return (
     <>
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-[228px] flex-col border-r border-white/[0.055] bg-[#090a0e]/95 px-4 py-6 backdrop-blur-xl md:flex">
-        <LudexLogo className="px-2" />
+        <ArcadiumLogo className="px-2" />
         <nav className="mt-10 space-y-1" aria-label="Navegação principal">
           {navigation.map(({ label, to, icon: Icon }) => (
             <NavLink
@@ -40,7 +40,7 @@ export function AppSidebar() {
             </NavLink>
           ))}
         </nav>
-        <p className="mt-auto px-2 text-[10px] text-zinc-700">Ludex Preview · v0.6.0</p>
+        <p className="mt-auto px-2 text-[10px] text-zinc-700">Arcadium Preview · v0.6.0</p>
       </aside>
 
       <nav className="app-mobile-nav fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">

@@ -3,6 +3,8 @@ dist/
 .vite/
 .tools/
 src-tauri/target/
+releases/**/*.exe
+releases/**/*.msi
 src-tauri/gen/schemas/
 *.log
 .DS_Store

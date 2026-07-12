@@ -206,14 +206,14 @@ export function ImportLibrary() {
                 ))}
               </div>
               <p className="mt-4 text-[11px] leading-relaxed text-zinc-600">
-                Arquivos específicos de PS1 não fazem parte do escopo do Ludex.
+                Arquivos específicos de PS1 não fazem parte do escopo do Arcadium.
               </p>
             </div>
             <div className="flex gap-3 rounded-2xl border border-sky-300/10 bg-sky-300/[0.035] p-4">
               <Info size={17} className="mt-0.5 shrink-0 text-sky-300/70" />
               <p className="text-[11px] leading-relaxed text-sky-100/55">
-                O Ludex apenas indexará referências. Seus arquivos originais permanecerão no local
-                atual.
+                O Arcadium apenas indexará referências. Seus arquivos originais permanecerão no
+                local atual.
               </p>
             </div>
           </aside>

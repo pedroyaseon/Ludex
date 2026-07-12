@@ -1,4 +1,5 @@
 import type { Game, LaunchProfile } from "@/types/domain";
+import { readMigratedStorage } from "@/lib/storage-migration";
 
 export interface LaunchProfileDraft {
   fullscreen: boolean;
@@ -7,10 +8,11 @@ export interface LaunchProfileDraft {
   controllerProfile: string;
 }
 
-const launchProfilesStorageKey = "ludex.launchProfiles.v1";
+const launchProfilesStorageKey = "arcadium.launchProfiles.v1";
+const legacyLaunchProfilesStorageKeys = ["ludex.launchProfiles.v1"];
 
 const readProfiles = (): LaunchProfile[] => {
-  const rawValue = window.localStorage.getItem(launchProfilesStorageKey);
+  const rawValue = readMigratedStorage(launchProfilesStorageKey, legacyLaunchProfilesStorageKeys);
   if (!rawValue) return [];
 
   try {

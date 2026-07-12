@@ -1,12 +1,12 @@
 [package]
-name = "ludex"
+name = "arcadium"
 version = "0.6.0"
-description = "Modern desktop library for local emulated games"
-authors = ["Ludex Contributors"]
+description = "Arcadium is a modern desktop library for organizing and launching local console games."
+authors = ["Arcadium Contributors"]
 edition = "2021"
 
 [lib]
-name = "ludex_lib"
+name = "arcadium_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

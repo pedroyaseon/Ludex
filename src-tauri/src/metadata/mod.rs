@@ -107,7 +107,7 @@ pub async fn fetch_game_metadata(
     let client = Client::builder()
         .https_only(true)
         .timeout(Duration::from_secs(12))
-        .user_agent("Ludex/0.6.0")
+        .user_agent("Arcadium/0.6.0")
         .build()
         .map_err(|_| "Não foi possível preparar a conexão com a RAWG.".to_string())?;
 

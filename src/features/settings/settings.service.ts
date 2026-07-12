@@ -1,6 +1,8 @@
 import type { AppSettings } from "@/features/settings/settings.types";
+import { readMigratedStorage } from "@/lib/storage-migration";
 
-const settingsStorageKey = "ludex.settings.v1";
+const settingsStorageKey = "arcadium.settings.v1";
+const legacySettingsStorageKeys = ["ludex.settings.v1"];
 
 const defaultSettings: AppSettings = {
   theme: "dark",
@@ -20,7 +22,7 @@ const defaultSettings: AppSettings = {
 };
 
 const readSettings = (): AppSettings => {
-  const rawValue = window.localStorage.getItem(settingsStorageKey);
+  const rawValue = readMigratedStorage(settingsStorageKey, legacySettingsStorageKeys);
   if (!rawValue) return structuredClone(defaultSettings);
 
   try {
@@ -44,7 +46,7 @@ const readSettings = (): AppSettings => {
 
 const writeSettings = (settings: AppSettings) => {
   window.localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
-  window.dispatchEvent(new Event("ludex:settings-updated"));
+  window.dispatchEvent(new Event("arcadium:settings-updated"));
 };
 
 export const settingsService = {

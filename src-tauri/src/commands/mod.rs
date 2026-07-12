@@ -1,4 +1,4 @@
 #[tauri::command]
 pub fn health_check() -> &'static str {
-    "Ludex native layer is ready"
+    "Arcadium native layer is ready"
 }

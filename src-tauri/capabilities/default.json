@@ -1,7 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default desktop permissions for Ludex",
+  "description": "Default desktop permissions for Arcadium",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default"]
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://www.youtube.com/*" }]
+    },
+    "opener:allow-reveal-item-in-dir"
+  ]
 }

@@ -1,14 +1,17 @@
 import type { Game, PlaySession } from "@/types/domain";
+import { readMigratedStorage } from "@/lib/storage-migration";
 
 export interface ActivePlaySession extends PlaySession {
   processId?: number;
 }
 
-const playSessionsStorageKey = "ludex.playSessions.v1";
-const activePlaySessionStorageKey = "ludex.playSessions.active.v1";
+const playSessionsStorageKey = "arcadium.playSessions.v1";
+const activePlaySessionStorageKey = "arcadium.playSessions.active.v1";
+const legacyPlaySessionsStorageKeys = ["ludex.playSessions.v1"];
+const legacyActivePlaySessionStorageKeys = ["ludex.playSessions.active.v1"];
 
 const readSessions = (): PlaySession[] => {
-  const rawValue = window.localStorage.getItem(playSessionsStorageKey);
+  const rawValue = readMigratedStorage(playSessionsStorageKey, legacyPlaySessionsStorageKeys);
   if (!rawValue) return [];
 
   try {
@@ -24,7 +27,10 @@ const writeSessions = (sessions: PlaySession[]) => {
 };
 
 const readActiveSessions = (): ActivePlaySession[] => {
-  const rawValue = window.localStorage.getItem(activePlaySessionStorageKey);
+  const rawValue = readMigratedStorage(
+    activePlaySessionStorageKey,
+    legacyActivePlaySessionStorageKeys,
+  );
   if (!rawValue) return [];
 
   try {

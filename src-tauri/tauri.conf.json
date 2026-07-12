@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ludex",
+  "productName": "Arcadium",
   "version": "0.6.0",
-  "identifier": "com.ludex.desktop",
+  "identifier": "com.arcadium.app",
   "build": {
     "beforeDevCommand": "npm run dev:web",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,8 @@
   "app": {
     "windows": [
       {
-        "title": "Ludex",
+        "create": false,
+        "title": "Arcadium",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,

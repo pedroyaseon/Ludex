@@ -179,7 +179,8 @@ export function Settings() {
                         </button>
                       </div>
                       <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-                        Ao abrir a Home, o Ludex escaneia essa pasta e atualiza a biblioteca local.
+                        Ao abrir a Home, o Arcadium escaneia essa pasta e atualiza a biblioteca
+                        local.
                       </p>
                     </label>
 
@@ -244,7 +245,7 @@ export function Settings() {
                         </h2>
                         <p className="mt-1 text-xs leading-relaxed text-zinc-600">
                           {libraryState.totalGames} jogos indexados no armazenamento local. Limpar
-                          remove apenas o índice do Ludex; suas ISOs permanecem intactas.
+                          remove apenas o índice do Arcadium; suas ISOs permanecem intactas.
                         </p>
                       </div>
                     </div>
@@ -313,7 +314,7 @@ export function Settings() {
                         </button>
                       </div>
                       <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-                        O Ludex valida o caminho e inicia o PCSX2 diretamente, sem shell.
+                        O Arcadium valida o caminho e inicia o PCSX2 diretamente, sem shell.
                       </p>
                     </label>
                   </div>
@@ -426,7 +427,7 @@ export function Settings() {
                     {
                       key: "minimizeToTray" as const,
                       title: "Minimizar para a bandeja",
-                      description: "Mantém o Ludex ativo em segundo plano.",
+                      description: "Mantém o Arcadium ativo em segundo plano.",
                     },
                   ].map((item) => (
                     <label
@@ -456,7 +457,7 @@ export function Settings() {
                 <div className="mt-6 flex gap-3 rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.035] p-4">
                   <ShieldCheck size={18} className="shrink-0 text-emerald-300" />
                   <p className="text-[11px] leading-relaxed text-emerald-100/55">
-                    O Ludex não envia sua biblioteca ou caminhos locais para servidores externos.
+                    O Arcadium não envia sua biblioteca ou caminhos locais para servidores externos.
                   </p>
                 </div>
               </section>
@@ -467,7 +468,7 @@ export function Settings() {
       <ConfirmDialog
         isOpen={isClearLibraryDialogOpen}
         title="Limpar índice local?"
-        description="Essa ação remove apenas a biblioteca indexada no Ludex. Os arquivos originais de jogos não são apagados, movidos ou modificados."
+        description="Essa ação remove apenas a biblioteca indexada no Arcadium. Os arquivos originais de jogos não são apagados, movidos ou modificados."
         confirmLabel="Limpar índice"
         tone="danger"
         onCancel={() => setIsClearLibraryDialogOpen(false)}
