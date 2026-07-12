@@ -50,12 +50,12 @@ export function ImportLibrary() {
   }
 
   async function handleImport() {
-    if (!result?.files.length) return;
+    if (!result) return;
     setIsImporting(true);
     setError(undefined);
 
     try {
-      await gamesService.importScanResult(result);
+      await gamesService.importScanResult(result, { pruneMissingFromSource: true });
       await settingsService.update({
         libraryFolders: {
           PS2: {
@@ -77,9 +77,9 @@ export function ImportLibrary() {
       <div className="pointer-events-none absolute top-[-250px] left-[10%] size-[550px] rounded-full bg-cyan-500/[0.045] blur-[120px]" />
       <div className="relative mx-auto max-w-5xl">
         <PageHeader
-          eyebrow="Biblioteca"
-          title="Importar jogos"
-          description="Aponte para sua pasta local de PS2. O Ludex indexa referências aos arquivos, sem mover, alterar ou enviar seus jogos."
+          eyebrow="Ferramenta manual"
+          title="Forçar sincronização"
+          description="Use esta tela somente quando quiser revisar ou reconstruir manualmente o índice da biblioteca."
         />
 
         <div className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -91,7 +91,7 @@ export function ImportLibrary() {
               <div>
                 <h2 className="text-base font-semibold text-white">Pasta de jogos</h2>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                  Selecione onde seus arquivos de PS2 estão armazenados.
+                  Selecione a origem que será sincronizada agora.
                 </p>
               </div>
             </div>
@@ -175,7 +175,7 @@ export function ImportLibrary() {
                   </>
                 ) : (
                   <>
-                    <ScanSearch size={17} /> Analisar biblioteca
+                    <ScanSearch size={17} /> Verificar agora
                   </>
                 )}
               </button>
@@ -239,10 +239,10 @@ export function ImportLibrary() {
               <button
                 type="button"
                 onClick={() => void handleImport()}
-                disabled={!result.files.length || isImporting}
+                disabled={isImporting}
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isImporting ? "Importando..." : "Adicionar à biblioteca"}{" "}
+                {isImporting ? "Sincronizando..." : "Forçar sincronização"}{" "}
                 <ChevronRight size={15} />
               </button>
             </div>

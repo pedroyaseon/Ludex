@@ -11,7 +11,7 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.5.0`.
+Versão: `v0.5.1`.
 
 Nesta versão, o Ludex já possui o primeiro fluxo real local:
 
@@ -21,8 +21,10 @@ Nesta versão, o Ludex já possui o primeiro fluxo real local:
 - persistência temporária em `localStorage`, enquanto SQLite não é integrado;
 - configuração local do caminho do PCSX2;
 - launcher nativo para abrir jogos PS2 com PCSX2;
-- detecção automática da pasta PS2 configurada ao abrir a biblioteca;
-- painel de status da biblioteca com total indexado, última sincronização e contadores de mudanças;
+- monitoramento nativo em tempo real da pasta PS2 configurada;
+- atualização automática da biblioteca ao adicionar ou remover jogos;
+- interface da biblioteca mais limpa, visual e orientada às capas;
+- sincronização manual forçada disponível na área **Importação manual**;
 - limpeza segura do índice local sem apagar arquivos de jogos;
 - seletor nativo para pasta da biblioteca e executável do PCSX2;
 - perfis locais de execução por jogo com fullscreen e argumentos extras seguros;
@@ -80,8 +82,8 @@ npm run dev:web
    ```
 
 2. Mantenha **Detectar jogos automaticamente** ligado.
-3. Abra a **Home**. O Ludex escaneia a pasta configurada e atualiza a biblioteca.
-4. Se necessário, clique em **Reescanear** para forçar uma nova varredura.
+3. Abra a **Biblioteca**. O Ludex passa a monitorar a pasta e reflete adições e remoções automaticamente.
+4. Se precisar reconstruir o índice, use **Importação manual** para forçar uma sincronização.
 5. Confirme o caminho do PCSX2, por exemplo:
 
    ```text
@@ -185,6 +187,15 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] iniciar PCSX2 com fullscreen e argumentos extras sem shell;
 - [x] registrar sessão ativa e finalizar manualmente;
 - [x] atualizar último jogado, tempo jogado e histórico recente.
+
+### v0.5.1 — Biblioteca ao vivo
+
+- [x] reformular a Home com hierarquia visual mais direta;
+- [x] remover métricas e descrições operacionais da biblioteca;
+- [x] remover a ação de reescaneamento da Home;
+- [x] monitorar a pasta PS2 em tempo real via Tauri/Rust;
+- [x] sincronizar automaticamente após adições e remoções;
+- [x] manter a importação como ferramenta manual forçada.
 
 ### Próximas versões
 
