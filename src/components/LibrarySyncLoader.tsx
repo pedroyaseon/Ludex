@@ -1,5 +1,3 @@
-import { LoaderCircle } from "lucide-react";
-
 export function LibrarySyncLoader() {
   return (
     <div
@@ -9,18 +7,21 @@ export function LibrarySyncLoader() {
       aria-label="Sincronizando novos jogos"
     >
       <div className="flex items-center gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-300">
-          <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" />
+        <span className="flex size-8 shrink-0 items-center justify-center gap-1 rounded-xl bg-brand-500/10">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-1 rounded-full bg-brand-300 motion-reduce:animate-none"
+              style={{
+                animation: `sync-dot 1.2s ease-in-out ${dot * 140}ms infinite`,
+              }}
+            />
+          ))}
         </span>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-zinc-300">Atualizando biblioteca</p>
-          <p className="mt-0.5 truncate text-[10px] text-zinc-600">
-            Identificando jogos, capas e informações.
-          </p>
-        </div>
+        <p className="text-xs font-semibold text-zinc-300">Atualizando biblioteca</p>
       </div>
       <div className="absolute inset-x-0 bottom-0 h-px overflow-hidden bg-white/[0.04]">
-        <div className="h-full w-1/3 animate-[sync-progress_1.5s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-brand-300 to-transparent motion-reduce:animate-none" />
+        <div className="h-full w-full animate-[sync-progress_1.8s_linear_infinite] bg-gradient-to-r from-transparent via-brand-300/80 to-transparent motion-reduce:animate-none" />
       </div>
     </div>
   );
