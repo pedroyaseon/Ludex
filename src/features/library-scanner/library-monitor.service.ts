@@ -8,7 +8,10 @@ export const libraryMonitorStatusEvent = "arcadium:library-monitor-status";
 
 export type LibraryMonitorStatus = "starting" | "watching" | "syncing" | "error" | "idle";
 
+let currentStatus: LibraryMonitorStatus = "starting";
+
 const notifyStatus = (status: LibraryMonitorStatus) => {
+  currentStatus = status;
   window.dispatchEvent(new CustomEvent(libraryMonitorStatusEvent, { detail: status }));
 };
 
@@ -17,6 +20,10 @@ const notifyLibraryUpdated = () => {
 };
 
 export const libraryMonitorService = {
+  getStatus(): LibraryMonitorStatus {
+    return currentStatus;
+  },
+
   async start(): Promise<() => void> {
     let debounceTimer: number | undefined;
     let syncRunning = false;

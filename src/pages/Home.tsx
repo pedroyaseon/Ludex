@@ -66,7 +66,10 @@ export function Home() {
           </div>
 
           {isSynchronizing ? (
-            <LibrarySyncLoader />
+            <>
+              <LibrarySyncLoader />
+              <GameGridSkeleton />
+            </>
           ) : isLoading ? (
             <GameGridSkeleton />
           ) : games.length ? (

@@ -3,6 +3,7 @@ import { gamesService, type GameQuery, type LibraryState } from "@/features/game
 import type { Game } from "@/types/domain";
 import {
   libraryMonitorStatusEvent,
+  libraryMonitorService,
   libraryUpdatedEvent,
   type LibraryMonitorStatus,
 } from "@/features/library-scanner/library-monitor.service";
@@ -11,7 +12,9 @@ export function useGames(query: GameQuery = {}) {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [monitorStatus, setMonitorStatus] = useState<LibraryMonitorStatus>("starting");
+  const [monitorStatus, setMonitorStatus] = useState<LibraryMonitorStatus>(() =>
+    libraryMonitorService.getStatus(),
+  );
   const [libraryState, setLibraryState] = useState<LibraryState>({ totalGames: 0 });
   const { search, platform, favoritesOnly } = query;
 
