@@ -36,7 +36,6 @@ export function GameVideoPlayer({ gameTitle, videos }: GameVideoPlayerProps) {
               Vídeos
             </h2>
           </div>
-          <p className="mt-1.5 text-xs text-zinc-600">Assista sem sair do Arcadium.</p>
         </div>
         <span className="text-[10px] font-semibold tracking-[0.12em] text-zinc-600 uppercase">
           {safeVideos.length} {safeVideos.length === 1 ? "vídeo" : "vídeos"}
