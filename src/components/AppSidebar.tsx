@@ -40,7 +40,7 @@ export function AppSidebar() {
             </NavLink>
           ))}
         </nav>
-        <p className="mt-auto px-2 text-[10px] text-zinc-700">Arcadium Preview · v0.6.0</p>
+        <p className="mt-auto px-2 text-[10px] text-zinc-700">Arcadium Preview · v0.6.1</p>
       </aside>
 
       <nav className="app-mobile-nav fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-white/10 bg-[#111218]/90 p-2 shadow-2xl backdrop-blur-xl md:hidden">

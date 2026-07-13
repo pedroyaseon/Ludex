@@ -10,6 +10,7 @@ import {
 export function useGames(query: GameQuery = {}) {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [monitorStatus, setMonitorStatus] = useState<LibraryMonitorStatus>("starting");
   const [libraryState, setLibraryState] = useState<LibraryState>({ totalGames: 0 });
   const { search, platform, favoritesOnly } = query;
@@ -29,7 +30,10 @@ export function useGames(query: GameQuery = {}) {
   }, [loadGames]);
 
   useEffect(() => {
-    const handleLibraryUpdated = () => void loadGames();
+    const handleLibraryUpdated = () => {
+      setIsRefreshing(true);
+      void loadGames().finally(() => setIsRefreshing(false));
+    };
     const handleMonitorStatus = (event: Event) => {
       setMonitorStatus((event as CustomEvent<LibraryMonitorStatus>).detail);
     };
@@ -50,6 +54,7 @@ export function useGames(query: GameQuery = {}) {
   return {
     games,
     isLoading,
+    isSynchronizing: monitorStatus === "starting" || monitorStatus === "syncing" || isRefreshing,
     monitorStatus,
     libraryState,
     clearLibrary,

@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@keyframes sync-progress {
+  0% {
+    transform: translateX(-110%);
+  }
+  50% {
+    transform: translateX(50%);
+  }
+  100% {
+    transform: translateX(210%);
+  }
+}
+
 @theme {
   --color-brand-50: #f4f0ff;
   --color-brand-100: #ebe4ff;

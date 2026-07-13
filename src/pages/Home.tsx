@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 import { useState } from "react";
 import { EmptyLibraryState } from "@/components/EmptyLibraryState";
 import { GameGrid, GameGridSkeleton } from "@/components/GameGrid";
+import { LibrarySyncLoader } from "@/components/LibrarySyncLoader";
 import { PlatformFilter, type PlatformSelection } from "@/components/PlatformFilter";
 import { SearchBar } from "@/components/SearchBar";
 import { useGames } from "@/features/games/useGames";
@@ -11,7 +12,7 @@ export function Home() {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<PlatformSelection>("ALL");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const { games, isLoading } = useGames({
+  const { games, isLoading, isSynchronizing } = useGames({
     search,
     platform,
     favoritesOnly,
@@ -57,14 +58,16 @@ export function Home() {
             <h2 id="library-heading" className="text-sm font-semibold text-zinc-300">
               {favoritesOnly ? "Favoritos" : search ? "Resultados" : "Todos os jogos"}
             </h2>
-            {!isLoading && (
+            {!isLoading && !isSynchronizing && (
               <span className="text-[11px] text-zinc-600">
                 {games.length} {games.length === 1 ? "jogo" : "jogos"}
               </span>
             )}
           </div>
 
-          {isLoading ? (
+          {isSynchronizing ? (
+            <LibrarySyncLoader />
+          ) : isLoading ? (
             <GameGridSkeleton />
           ) : games.length ? (
             <GameGrid games={games} />

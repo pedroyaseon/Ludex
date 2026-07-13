@@ -5,7 +5,6 @@ import {
   Gamepad2,
   Globe2,
   Monitor,
-  KeyRound,
   Save,
   ShieldCheck,
   Trash2,
@@ -16,7 +15,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { gamesService, type LibraryState } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 import { nativeDialogs } from "@/lib/native-dialogs";
-import { metadataService } from "@/features/metadata/metadata.service";
 import type { AppSettings } from "@/features/settings/settings.types";
 
 const sections = [
@@ -33,16 +31,10 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [libraryCleared, setLibraryCleared] = useState(false);
   const [isClearLibraryDialogOpen, setIsClearLibraryDialogOpen] = useState(false);
-  const [rawgConfigured, setRawgConfigured] = useState(false);
-  const [igdbConfigured, setIgdbConfigured] = useState(false);
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
     void gamesService.getLibraryState().then(setLibraryState);
-    void metadataService.configuration().then(({ rawg, igdb }) => {
-      setRawgConfigured(rawg);
-      setIgdbConfigured(igdb);
-    });
   }, []);
 
   async function handleSave() {
@@ -233,8 +225,8 @@ export function Settings() {
                   </div>
                 </section>
 
-                <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
-                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-4">
                       <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/[0.04] text-zinc-400">
                         <Database size={19} />
@@ -243,9 +235,10 @@ export function Settings() {
                         <h2 className="text-base font-semibold text-white">
                           Manutenção da biblioteca
                         </h2>
-                        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
-                          {libraryState.totalGames} jogos indexados no armazenamento local. Limpar
-                          remove apenas o índice do Arcadium; suas ISOs permanecem intactas.
+                        <p className="mt-1 text-xs text-zinc-600">
+                          {libraryState.totalGames === 1
+                            ? "1 jogo no índice local."
+                            : `${libraryState.totalGames} jogos no índice local.`}
                         </p>
                       </div>
                     </div>
@@ -253,10 +246,10 @@ export function Settings() {
                       type="button"
                       onClick={() => setIsClearLibraryDialogOpen(true)}
                       disabled={libraryState.totalGames === 0}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/15 bg-rose-400/[0.07] px-4 text-xs font-semibold text-rose-100/80 hover:bg-rose-400/[0.11] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-rose-300/15 bg-rose-400/[0.07] px-4 text-xs font-semibold whitespace-nowrap text-rose-100/80 hover:bg-rose-400/[0.11] disabled:cursor-not-allowed disabled:opacity-45 sm:self-auto"
                     >
                       {libraryCleared ? <Check size={16} /> : <Trash2 size={16} />}
-                      {libraryCleared ? "Biblioteca limpa" : "Limpar índice local"}
+                      {libraryCleared ? "Índice limpo" : "Limpar índice"}
                     </button>
                   </div>
                 </section>
@@ -388,36 +381,7 @@ export function Settings() {
             {activeSection === "general" && (
               <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
                 <h2 className="text-base font-semibold text-white">Geral</h2>
-                <div className="mt-6 flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-black/10 p-4">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-400/10 text-brand-300">
-                    <KeyRound size={18} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-xs font-semibold text-zinc-300">Metadados RAWG</h3>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
-                          rawgConfigured
-                            ? "bg-emerald-400/10 text-emerald-300"
-                            : "bg-amber-400/10 text-amber-300"
-                        }`}
-                      >
-                        {rawgConfigured ? "Configurada" : "Chave ausente"}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-600">
-                      Configure <code>RAWG_API_KEY</code> no arquivo <code>.env</code> local. A
-                      chave é lida apenas pelo backend Rust e não é exposta à interface.
-                    </p>
-                    <p className="mt-2 text-[10px] text-zinc-600">
-                      IGDB/Twitch:{" "}
-                      <span className={igdbConfigured ? "text-emerald-300" : "text-amber-300"}>
-                        {igdbConfigured ? "configurada" : "credenciais ausentes"}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 divide-y divide-white/[0.06]">
+                <div className="mt-4 divide-y divide-white/[0.06]">
                   {[
                     {
                       key: "checkForUpdates" as const,
@@ -467,8 +431,8 @@ export function Settings() {
       </div>
       <ConfirmDialog
         isOpen={isClearLibraryDialogOpen}
-        title="Limpar índice local?"
-        description="Essa ação remove apenas a biblioteca indexada no Arcadium. Os arquivos originais de jogos não são apagados, movidos ou modificados."
+        title="Limpar índice?"
+        description="Remove os jogos da biblioteca sem alterar suas ISOs."
         confirmLabel="Limpar índice"
         tone="danger"
         onCancel={() => setIsClearLibraryDialogOpen(false)}
