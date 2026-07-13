@@ -17,11 +17,14 @@ export function ArcadiumLogo({ compact = false, className }: ArcadiumLogoProps) 
   }
 
   return (
-    <div className={cn("relative h-12 w-[180px] overflow-hidden", className)} aria-label="Arcadium">
+    <div
+      className={cn("relative h-12 w-full max-w-[196px] overflow-hidden", className)}
+      aria-label="Arcadium"
+    >
       <img
         src="/arcadium-logo.png"
         alt="Arcadium"
-        className="absolute -top-[27px] -left-[5px] w-[190px] max-w-none"
+        className="absolute -top-[31px] -left-[8px] w-[204px] max-w-none"
       />
     </div>
   );

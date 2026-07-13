@@ -13,7 +13,7 @@ export function AppSidebar() {
   return (
     <>
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-[228px] flex-col border-r border-white/[0.055] bg-[#090a0e]/95 px-4 py-6 backdrop-blur-xl md:flex">
-        <ArcadiumLogo className="px-2" />
+        <ArcadiumLogo />
         <nav className="mt-10 space-y-1" aria-label="Navegação principal">
           {navigation.map(({ label, to, icon: Icon }) => (
             <NavLink
