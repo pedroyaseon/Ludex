@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Check,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -8,7 +7,6 @@ import {
   Images,
   Info,
   Play,
-  Save,
   Square,
   X,
 } from "lucide-react";
@@ -16,10 +14,7 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GameVideoPlayer } from "@/components/GameVideoPlayer";
-import {
-  launchProfilesService,
-  type LaunchProfileDraft,
-} from "@/features/emulators/launch-profiles.service";
+import { launchProfilesService } from "@/features/emulators/launch-profiles.service";
 import { launcherService } from "@/features/emulators/launcher.service";
 import {
   playSessionsService,
@@ -29,7 +24,7 @@ import { gamesService } from "@/features/games/games.service";
 import { libraryUpdatedEvent } from "@/features/library-scanner/library-monitor.service";
 import { settingsService } from "@/features/settings/settings.service";
 import { formatLastPlayed, formatPlaytime } from "@/lib/formatters";
-import type { Game, LaunchProfile, PlaySession } from "@/types/domain";
+import type { Game, PlaySession } from "@/types/domain";
 
 export function GameDetails() {
   const { gameId = "" } = useParams();
@@ -38,9 +33,6 @@ export function GameDetails() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchMessage, setLaunchMessage] = useState<string>();
   const [launchMessageType, setLaunchMessageType] = useState<"success" | "error">("success");
-  const [profile, setProfile] = useState<LaunchProfile>();
-  const [profileDraft, setProfileDraft] = useState<LaunchProfileDraft>();
-  const [profileSaved, setProfileSaved] = useState(false);
   const [activeSession, setActiveSession] = useState<ActivePlaySession>();
   const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -52,18 +44,10 @@ export function GameDetails() {
       if (!isActive) return;
       setGame(result);
       if (result) {
-        const [launchProfile, runningSession, playSessions] = await Promise.all([
-          launchProfilesService.getForGame(result),
+        const [runningSession, playSessions] = await Promise.all([
           playSessionsService.getActiveForGame(result.id),
           playSessionsService.listForGame(result.id),
         ]);
-        setProfile(launchProfile);
-        setProfileDraft({
-          fullscreen: launchProfile.fullscreen,
-          customArgs: launchProfile.customArgs ?? "",
-          resolutionPreset: launchProfile.resolutionPreset ?? "native",
-          controllerProfile: launchProfile.controllerProfile ?? "default",
-        });
         setActiveSession(runningSession);
         setSessions(playSessions);
       }
@@ -135,9 +119,7 @@ export function GameDetails() {
       if (!emulatorPath) {
         throw new Error("Configure o caminho do PCSX2 em Configurações antes de jogar.");
       }
-      const launchProfile: LaunchProfile =
-        profile ?? (await launchProfilesService.getForGame(game));
-      setProfile(launchProfile);
+      const launchProfile = await launchProfilesService.getForGame(game);
       const result = await launcherService.launchGame({
         emulatorPath,
         game,
@@ -157,20 +139,6 @@ export function GameDetails() {
     } finally {
       setIsLaunching(false);
     }
-  }
-
-  async function handleSaveProfile() {
-    if (!game || !profileDraft) return;
-    const savedProfile = await launchProfilesService.saveForGame(game, profileDraft);
-    setProfile(savedProfile);
-    setProfileDraft({
-      fullscreen: savedProfile.fullscreen,
-      customArgs: savedProfile.customArgs ?? "",
-      resolutionPreset: savedProfile.resolutionPreset ?? "native",
-      controllerProfile: savedProfile.controllerProfile ?? "default",
-    });
-    setProfileSaved(true);
-    window.setTimeout(() => setProfileSaved(false), 1600);
   }
 
   async function handleFinishSession() {
@@ -371,87 +339,6 @@ export function GameDetails() {
                 </div>
               </section>
             ) : null}
-
-            <section className="rounded-[22px] border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold text-white">Perfil de execução</h2>
-                  <p className="mt-1 text-xs text-zinc-600">Preferências locais para este jogo.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleSaveProfile()}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-zinc-950 hover:bg-zinc-200"
-                >
-                  {profileSaved ? <Check size={14} /> : <Save size={14} />}
-                  {profileSaved ? "Salvo" : "Salvar"}
-                </button>
-              </div>
-
-              {profileDraft && (
-                <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-black/10 p-3.5">
-                    <span>
-                      <span className="block text-xs font-semibold text-zinc-300">Tela cheia</span>
-                      <span className="mt-1 block text-[10px] text-zinc-600">
-                        Inicia o PCSX2 em fullscreen.
-                      </span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={profileDraft.fullscreen}
-                      onChange={(event) =>
-                        setProfileDraft({ ...profileDraft, fullscreen: event.target.checked })
-                      }
-                      className="peer sr-only"
-                    />
-                    <span className="relative h-6 w-11 rounded-full bg-zinc-800 after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-brand-500 peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
-                  </label>
-                  <label>
-                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                      Resolução
-                    </span>
-                    <select
-                      value={profileDraft.resolutionPreset}
-                      onChange={(event) =>
-                        setProfileDraft({ ...profileDraft, resolutionPreset: event.target.value })
-                      }
-                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-zinc-950 px-3 text-xs text-zinc-300 outline-none"
-                    >
-                      <option value="native">Nativo</option>
-                      <option value="2x">2x</option>
-                      <option value="3x">3x</option>
-                      <option value="4x">4x</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                      Controle
-                    </span>
-                    <input
-                      value={profileDraft.controllerProfile}
-                      onChange={(event) =>
-                        setProfileDraft({ ...profileDraft, controllerProfile: event.target.value })
-                      }
-                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-black/20 px-3 text-xs text-zinc-300 outline-none"
-                    />
-                  </label>
-                  <label>
-                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
-                      Argumentos extras
-                    </span>
-                    <input
-                      value={profileDraft.customArgs}
-                      onChange={(event) =>
-                        setProfileDraft({ ...profileDraft, customArgs: event.target.value })
-                      }
-                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-black/20 px-3 font-mono text-[11px] text-zinc-300 outline-none"
-                      placeholder='ex: "--nogui"'
-                    />
-                  </label>
-                </div>
-              )}
-            </section>
           </main>
 
           <aside className="space-y-5">

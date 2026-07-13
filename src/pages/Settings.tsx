@@ -7,6 +7,7 @@ import {
   Monitor,
   Save,
   ShieldCheck,
+  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -20,6 +21,7 @@ import type { AppSettings } from "@/features/settings/settings.types";
 const sections = [
   { id: "library", label: "Biblioteca", icon: FolderOpen },
   { id: "emulators", label: "Emuladores", icon: Gamepad2 },
+  { id: "execution", label: "Execução", icon: SlidersHorizontal },
   { id: "appearance", label: "Aparência", icon: Monitor },
   { id: "general", label: "Geral", icon: Globe2 },
 ];
@@ -374,6 +376,95 @@ export function Settings() {
                     </div>
                     <p className="mt-3 text-xs font-semibold text-zinc-300">Seguir sistema</p>
                   </button>
+                </div>
+              </section>
+            )}
+
+            {activeSection === "execution" && (
+              <section className="rounded-3xl border border-white/[0.075] bg-white/[0.025] p-5 sm:p-7">
+                <h2 className="text-base font-semibold text-white">Execução</h2>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Defina como os jogos serão iniciados pelo emulador padrão.
+                </p>
+                <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-center justify-between rounded-xl border border-white/[0.07] bg-black/10 p-4">
+                    <span>
+                      <span className="block text-xs font-semibold text-zinc-300">Tela cheia</span>
+                      <span className="mt-1 block text-[10px] text-zinc-600">
+                        Inicia o PCSX2 em fullscreen.
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={settings.execution.fullscreen}
+                      onChange={(event) =>
+                        setSettings({
+                          ...settings,
+                          execution: { ...settings.execution, fullscreen: event.target.checked },
+                        })
+                      }
+                      className="peer sr-only"
+                    />
+                    <span className="relative h-6 w-11 rounded-full bg-zinc-800 after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-brand-500 peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                  </label>
+                  <label>
+                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
+                      Resolução
+                    </span>
+                    <select
+                      value={settings.execution.resolutionPreset}
+                      onChange={(event) =>
+                        setSettings({
+                          ...settings,
+                          execution: {
+                            ...settings.execution,
+                            resolutionPreset: event.target.value,
+                          },
+                        })
+                      }
+                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-zinc-950 px-3 text-xs text-zinc-300 outline-none"
+                    >
+                      <option value="native">Nativo</option>
+                      <option value="2x">2x</option>
+                      <option value="3x">3x</option>
+                      <option value="4x">4x</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
+                      Controle
+                    </span>
+                    <input
+                      value={settings.execution.controllerProfile}
+                      onChange={(event) =>
+                        setSettings({
+                          ...settings,
+                          execution: {
+                            ...settings.execution,
+                            controllerProfile: event.target.value,
+                          },
+                        })
+                      }
+                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-black/20 px-3 text-xs text-zinc-300 outline-none"
+                      placeholder="default"
+                    />
+                  </label>
+                  <label>
+                    <span className="mb-2 block text-[10px] font-semibold text-zinc-500">
+                      Argumentos extras
+                    </span>
+                    <input
+                      value={settings.execution.customArgs}
+                      onChange={(event) =>
+                        setSettings({
+                          ...settings,
+                          execution: { ...settings.execution, customArgs: event.target.value },
+                        })
+                      }
+                      className="h-12 w-full rounded-xl border border-white/[0.08] bg-black/20 px-3 font-mono text-[11px] text-zinc-300 outline-none"
+                      placeholder='ex: "--nogui"'
+                    />
+                  </label>
                 </div>
               </section>
             )}

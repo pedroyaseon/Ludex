@@ -3,6 +3,7 @@ import { readMigratedStorage } from "@/lib/storage-migration";
 
 const settingsStorageKey = "arcadium.settings.v1";
 const legacySettingsStorageKeys = ["ludex.settings.v1"];
+const legacyLaunchProfileStorageKeys = ["arcadium.launchProfiles.v1", "ludex.launchProfiles.v1"];
 
 const defaultSettings: AppSettings = {
   theme: "dark",
@@ -19,11 +20,50 @@ const defaultSettings: AppSettings = {
       autoScan: true,
     },
   },
+  execution: {
+    fullscreen: true,
+    customArgs: "",
+    resolutionPreset: "native",
+    controllerProfile: "default",
+  },
+};
+
+const readLegacyExecutionSettings = (): AppSettings["execution"] | undefined => {
+  for (const storageKey of legacyLaunchProfileStorageKeys) {
+    const rawValue = window.localStorage.getItem(storageKey);
+    if (!rawValue) continue;
+    try {
+      const profiles = JSON.parse(rawValue) as Array<
+        Partial<AppSettings["execution"]> & {
+          updatedAt?: string;
+        }
+      >;
+      if (!Array.isArray(profiles) || profiles.length === 0) continue;
+      const latestProfile = [...profiles].sort((left, right) =>
+        (right.updatedAt ?? "").localeCompare(left.updatedAt ?? ""),
+      )[0];
+      return {
+        fullscreen: latestProfile.fullscreen ?? defaultSettings.execution.fullscreen,
+        customArgs: latestProfile.customArgs ?? defaultSettings.execution.customArgs,
+        resolutionPreset:
+          latestProfile.resolutionPreset ?? defaultSettings.execution.resolutionPreset,
+        controllerProfile:
+          latestProfile.controllerProfile ?? defaultSettings.execution.controllerProfile,
+      };
+    } catch {
+      // Ignore invalid legacy state and keep safe defaults.
+    }
+  }
+  return undefined;
 };
 
 const readSettings = (): AppSettings => {
   const rawValue = readMigratedStorage(settingsStorageKey, legacySettingsStorageKeys);
-  if (!rawValue) return structuredClone(defaultSettings);
+  if (!rawValue) {
+    const settings = structuredClone(defaultSettings);
+    settings.execution = readLegacyExecutionSettings() ?? settings.execution;
+    return settings;
+  }
 
   try {
     const parsedValue = JSON.parse(rawValue) as Partial<AppSettings>;
@@ -37,6 +77,10 @@ const readSettings = (): AppSettings => {
       libraryFolders: {
         ...defaultSettings.libraryFolders,
         ...parsedValue.libraryFolders,
+      },
+      execution: {
+        ...defaultSettings.execution,
+        ...(parsedValue.execution ?? readLegacyExecutionSettings()),
       },
     };
   } catch {
@@ -66,6 +110,10 @@ export const settingsService = {
       libraryFolders: {
         ...currentSettings.libraryFolders,
         ...patch.libraryFolders,
+      },
+      execution: {
+        ...currentSettings.execution,
+        ...patch.execution,
       },
     };
 

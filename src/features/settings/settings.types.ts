@@ -8,6 +8,13 @@ export interface LibraryFolderSettings {
   autoScan: boolean;
 }
 
+export interface ExecutionSettings {
+  fullscreen: boolean;
+  customArgs: string;
+  resolutionPreset: string;
+  controllerProfile: string;
+}
+
 export interface AppSettings {
   theme: ThemePreference;
   language: "pt-BR" | "en-US";
@@ -15,4 +22,5 @@ export interface AppSettings {
   checkForUpdates: boolean;
   emulatorPaths: Partial<Record<Platform, string>>;
   libraryFolders: Partial<Record<Platform, LibraryFolderSettings>>;
+  execution: ExecutionSettings;
 }
