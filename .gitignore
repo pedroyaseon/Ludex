@@ -3,9 +3,12 @@ dist/
 .vite/
 .tools/
 src-tauri/target/
-releases/**/*.exe
-releases/**/*.msi
 src-tauri/gen/schemas/
+releases/
+coverage/
+tmp/
+.eslintcache
+*.tsbuildinfo
 *.log
 .DS_Store
 Thumbs.db
