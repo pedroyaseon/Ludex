@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   FolderOpen,
   Gamepad2,
@@ -10,6 +12,7 @@ import {
   Play,
   Save,
   Square,
+  X,
 } from "lucide-react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useState } from "react";
@@ -28,7 +31,7 @@ import { gamesService } from "@/features/games/games.service";
 import { libraryUpdatedEvent } from "@/features/library-scanner/library-monitor.service";
 import { settingsService } from "@/features/settings/settings.service";
 import { formatLastPlayed, formatPlaytime } from "@/lib/formatters";
-import type { Game, GameArtwork, LaunchProfile, PlaySession } from "@/types/domain";
+import type { Game, LaunchProfile, PlaySession } from "@/types/domain";
 
 export function GameDetails() {
   const { gameId = "" } = useParams();
@@ -43,7 +46,7 @@ export function GameDetails() {
   const [activeSession, setActiveSession] = useState<ActivePlaySession>();
   const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [selectedArtwork, setSelectedArtwork] = useState<GameArtwork>();
+  const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>();
 
   useEffect(() => {
     let isActive = true;
@@ -97,6 +100,30 @@ export function GameDetails() {
     const intervalId = window.setInterval(updateElapsedTime, 1000);
     return () => window.clearInterval(intervalId);
   }, [activeSession]);
+
+  useEffect(() => {
+    if (selectedArtworkIndex === undefined) return;
+    const artworkCount = game?.metadata?.screenshots.length ?? 0;
+    if (artworkCount === 0) {
+      setSelectedArtworkIndex(undefined);
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedArtworkIndex(undefined);
+      if (event.key === "ArrowLeft") {
+        setSelectedArtworkIndex((current) =>
+          current === undefined ? current : (current - 1 + artworkCount) % artworkCount,
+        );
+      }
+      if (event.key === "ArrowRight") {
+        setSelectedArtworkIndex((current) =>
+          current === undefined ? current : (current + 1) % artworkCount,
+        );
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [game?.metadata?.screenshots.length, selectedArtworkIndex]);
 
   const recentSessions = useMemo(() => sessions.slice(0, 4), [sessions]);
 
@@ -188,6 +215,9 @@ export function GameDetails() {
 
   const cover = game.coverLocalPath ?? game.metadata?.cover?.imageUrl ?? game.coverUrl;
   const background = game.metadata?.background?.imageUrl ?? game.metadata?.screenshots[0]?.imageUrl;
+  const gallery = game.metadata?.screenshots ?? [];
+  const selectedArtwork =
+    selectedArtworkIndex === undefined ? undefined : gallery[selectedArtworkIndex];
   const information = [
     { label: "Desenvolvedor", value: game.developer },
     { label: "Publicadora", value: game.publisher },
@@ -335,11 +365,11 @@ export function GameDetails() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-                  {game.metadata.screenshots.slice(0, 6).map((artwork, index) => (
+                  {gallery.slice(0, 6).map((artwork, index) => (
                     <button
                       type="button"
                       key={artwork.imageUrl}
-                      onClick={() => setSelectedArtwork(artwork)}
+                      onClick={() => setSelectedArtworkIndex(index)}
                       className={`group/gallery overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.025] ${index === 0 ? "col-span-2 row-span-2" : ""}`}
                     >
                       <img
@@ -504,19 +534,54 @@ export function GameDetails() {
         </div>
       </div>
 
-      {selectedArtwork && (
-        <button
-          type="button"
-          className="fixed inset-0 z-50 grid size-full cursor-zoom-out place-items-center bg-black/90 p-5"
-          aria-label="Fechar imagem ampliada"
-          onClick={() => setSelectedArtwork(undefined)}
+      {selectedArtwork && selectedArtworkIndex !== undefined && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Galeria ampliada"
         >
+          <button
+            type="button"
+            onClick={() => setSelectedArtworkIndex(undefined)}
+            className="absolute top-5 right-5 z-10 grid size-11 place-items-center rounded-full border border-white/10 bg-black/45 text-white/70 backdrop-blur-md hover:bg-white/10 hover:text-white"
+            aria-label="Fechar galeria"
+          >
+            <X size={19} />
+          </button>
+          {gallery.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedArtworkIndex(
+                    (selectedArtworkIndex - 1 + gallery.length) % gallery.length,
+                  )
+                }
+                className="absolute left-5 z-10 grid size-12 place-items-center rounded-full border border-white/10 bg-black/45 text-white/70 backdrop-blur-md hover:bg-white/10 hover:text-white"
+                aria-label="Imagem anterior"
+              >
+                <ChevronLeft size={23} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedArtworkIndex((selectedArtworkIndex + 1) % gallery.length)}
+                className="absolute right-5 z-10 grid size-12 place-items-center rounded-full border border-white/10 bg-black/45 text-white/70 backdrop-blur-md hover:bg-white/10 hover:text-white"
+                aria-label="Próxima imagem"
+              >
+                <ChevronRight size={23} />
+              </button>
+            </>
+          )}
           <img
             src={selectedArtwork.imageUrl}
             alt={`Screenshot ampliada de ${game.title}`}
             className="max-h-[90vh] max-w-[94vw] rounded-2xl object-contain shadow-2xl"
           />
-        </button>
+          <span className="absolute bottom-6 rounded-full bg-black/55 px-3 py-1.5 text-[10px] font-semibold text-white/60 backdrop-blur-md">
+            {selectedArtworkIndex + 1} / {gallery.length}
+          </span>
+        </div>
       )}
     </div>
   );
