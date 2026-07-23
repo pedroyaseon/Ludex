@@ -2,7 +2,7 @@
 
 ## Supported platform
 
-Arcadium v0.6.2 is validated and distributed for Windows x64. Linux and macOS builds are not part of
+Arcadium v0.6.3 is validated and distributed for Windows x64. Linux and macOS builds are not part of
 the supported release surface yet.
 
 ## Reporting a vulnerability

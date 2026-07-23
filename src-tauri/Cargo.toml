@@ -1,6 +1,6 @@
 [package]
 name = "arcadium"
-version = "0.6.2"
+version = "0.6.3"
 description = "Arcadium is a modern desktop library for organizing and launching local console games."
 authors = ["Arcadium Contributors"]
 edition = "2021"
