@@ -1,9 +1,9 @@
 import type { ScanResult, ScannedFile } from "@/features/library-scanner/scanner.types";
 import { scannerService } from "@/features/library-scanner/scanner.service";
+import { databaseService } from "@/features/database/database.service";
 import { composeMetadata, metadataService } from "@/features/metadata/metadata.service";
 import { normalizeGameTitle } from "@/features/metadata/title-normalizer";
 import { settingsService } from "@/features/settings/settings.service";
-import { readMigratedStorage } from "@/lib/storage-migration";
 import type { Game, Platform } from "@/types/domain";
 
 export interface GameQuery {
@@ -40,11 +40,6 @@ interface ImportScanOptions {
   pruneMissingFromSource?: boolean;
 }
 
-const libraryStorageKey = "arcadium.library.games.v1";
-const libraryStateStorageKey = "arcadium.library.state.v1";
-const legacyLibraryStorageKeys = ["ludex.library.games.v1"];
-const legacyLibraryStateStorageKeys = ["ludex.library.state.v1"];
-
 const wait = (milliseconds = 180) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
@@ -53,46 +48,6 @@ const normalizeForSearch = (value: string) =>
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLocaleLowerCase("pt-BR");
-
-const readStoredGames = (): Game[] => {
-  const rawValue = readMigratedStorage(libraryStorageKey, legacyLibraryStorageKeys);
-  if (!rawValue) return [];
-
-  try {
-    const parsedValue = JSON.parse(rawValue);
-    return Array.isArray(parsedValue) ? (parsedValue as Game[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeStoredGames = (games: Game[]) => {
-  window.localStorage.setItem(libraryStorageKey, JSON.stringify(games));
-};
-
-const readLibraryState = (): LibraryState => {
-  const rawValue = readMigratedStorage(libraryStateStorageKey, legacyLibraryStateStorageKeys);
-  if (!rawValue) return { totalGames: readStoredGames().length };
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as Partial<LibraryState>;
-    return {
-      totalGames: parsedValue.totalGames ?? readStoredGames().length,
-      lastSyncedAt: parsedValue.lastSyncedAt,
-      lastScannedFolderPath: parsedValue.lastScannedFolderPath,
-      lastScannedPlatform: parsedValue.lastScannedPlatform,
-      lastScanDurationMilliseconds: parsedValue.lastScanDurationMilliseconds,
-      lastIgnoredCount: parsedValue.lastIgnoredCount,
-      lastSyncStats: parsedValue.lastSyncStats,
-    };
-  } catch {
-    return { totalGames: readStoredGames().length };
-  }
-};
-
-const writeLibraryState = (state: LibraryState) => {
-  window.localStorage.setItem(libraryStateStorageKey, JSON.stringify(state));
-};
 
 const normalizePathForCompare = (path: string) =>
   path.replaceAll("\\", "/").replace(/\/+$/g, "").toLocaleLowerCase("pt-BR");
@@ -165,9 +120,8 @@ const gameFromScannedFile = (file: ScannedFile, existing?: Game): Game => {
 
 export const gamesService = {
   async list(query: GameQuery = {}): Promise<Game[]> {
-    await wait();
     const normalizedSearch = normalizeForSearch(query.search?.trim() ?? "");
-    const games = readStoredGames();
+    const games = await databaseService.listGames();
 
     return games
       .filter((game) => {
@@ -186,13 +140,11 @@ export const gamesService = {
   },
 
   async getById(id: string): Promise<Game | undefined> {
-    await wait(100);
-    return readStoredGames().find((game) => game.id === id);
+    return databaseService.getGame(id);
   },
 
   async recordFinishedSession(gameId: string, durationSeconds: number): Promise<Game | undefined> {
-    await wait(80);
-    const games = readStoredGames();
+    const games = await databaseService.listGames();
     const now = new Date().toISOString();
     const nextGames = games.map((game) =>
       game.id === gameId
@@ -205,24 +157,24 @@ export const gamesService = {
         : game,
     );
 
-    writeStoredGames(nextGames);
-
-    return nextGames.find((game) => game.id === gameId);
+    const updatedGame = nextGames.find((game) => game.id === gameId);
+    if (updatedGame) {
+      await databaseService.upsertGame(updatedGame);
+    }
+    return updatedGame;
   },
 
   async enrichMetadata(gameId: string): Promise<Game | undefined> {
-    const games = readStoredGames();
+    const games = await databaseService.listGames();
     const game = games.find((candidate) => candidate.id === gameId);
     if (!game) return undefined;
 
     const attemptedAt = new Date().toISOString();
-    writeStoredGames(
-      games.map((candidate) =>
-        candidate.id === gameId
-          ? { ...candidate, metadataStatus: "pending", metadataLastAttemptAt: attemptedAt }
-          : candidate,
-      ),
-    );
+    await databaseService.upsertGame({
+      ...game,
+      metadataStatus: "pending",
+      metadataLastAttemptAt: attemptedAt,
+    });
 
     try {
       const bundle = await metadataService.fetch({
@@ -271,9 +223,7 @@ export const gamesService = {
             metadataError: undefined,
           };
 
-      writeStoredGames(
-        readStoredGames().map((candidate) => (candidate.id === gameId ? nextGame : candidate)),
-      );
+      await databaseService.upsertGame(nextGame);
       return nextGame;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -283,9 +233,7 @@ export const gamesService = {
         metadataLastAttemptAt: attemptedAt,
         metadataError: message,
       };
-      writeStoredGames(
-        readStoredGames().map((candidate) => (candidate.id === gameId ? nextGame : candidate)),
-      );
+      await databaseService.upsertGame(nextGame);
       throw new Error(message);
     }
   },
@@ -295,7 +243,7 @@ export const gamesService = {
     if (!configuration.rawg && !configuration.igdb) return 0;
 
     const retryThreshold = Date.now() - 24 * 60 * 60 * 1000;
-    const candidates = readStoredGames()
+    const candidates = (await databaseService.listGames())
       .filter((game) => {
         const needsMigration = !game.metadata || (game.metadata.schemaVersion ?? 0) < 3;
         const needsRawg = configuration.rawg && !game.metadata?.rawgId;
@@ -331,7 +279,7 @@ export const gamesService = {
     options: ImportScanOptions = {},
   ): Promise<LibrarySyncResult> {
     await wait(120);
-    const existingGames = readStoredGames();
+    const existingGames = await databaseService.listGames();
     const existingByPath = new Map(
       existingGames.map((game) => [game.filePath.toLocaleLowerCase("pt-BR"), game]),
     );
@@ -375,8 +323,8 @@ export const gamesService = {
       lastSyncStats: stats,
     };
 
-    writeStoredGames(nextGames);
-    writeLibraryState(state);
+    await databaseService.replaceGames(nextGames);
+    await databaseService.setLibraryState(state);
 
     return { scanResult: result, games: nextGames, state, stats };
   },
@@ -398,13 +346,14 @@ export const gamesService = {
   },
 
   async getLibraryState(): Promise<LibraryState> {
-    await wait(60);
-    return readLibraryState();
+    const [state, games] = await Promise.all([
+      databaseService.getLibraryState(),
+      databaseService.listGames(),
+    ]);
+    return state ?? { totalGames: games.length };
   },
 
   async clear(): Promise<void> {
-    await wait(80);
-    window.localStorage.removeItem(libraryStorageKey);
-    window.localStorage.removeItem(libraryStateStorageKey);
+    await databaseService.clearLibrary();
   },
 };

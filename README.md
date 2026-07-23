@@ -11,20 +11,21 @@ O produto combina a praticidade de uma biblioteca como a Steam com a navegação
 
 ## Estado atual
 
-Versão: `v0.6.2`.
+Versão: `v0.6.3`.
 
 Nesta versão, o Arcadium já possui o primeiro fluxo real local:
 
 - scanner nativo de arquivos PS2 via Tauri/Rust;
 - importação de `.iso`, `.chd`, `.bin` e `.cue`;
 - biblioteca exibida a partir de jogos importados, sem jogos exemplo no fluxo principal;
-- persistência temporária em `localStorage`, enquanto SQLite não é integrado;
+- persistência nativa do catálogo, estado da biblioteca e sessões em SQLite;
+- migração automática e compatível dos dados de biblioteca antes salvos no `localStorage`;
 - configuração local do caminho do PCSX2;
 - launcher nativo para abrir jogos PS2 com PCSX2;
 - monitoramento nativo em tempo real da pasta PS2 configurada;
 - atualização automática da biblioteca ao adicionar ou remover jogos;
 - interface da biblioteca mais limpa, visual e orientada às capas;
-- sincronização manual forçada disponível na área **Importação manual**;
+- sincronização manual forçada disponível na área **Importar**;
 - temas escuro, claro e automático conforme o sistema;
 - capas oficiais e referências de vídeo obtidas pela IGDB;
 - backgrounds, screenshots e metadados textuais obtidos pela RAWG;
@@ -36,7 +37,7 @@ Nesta versão, o Arcadium já possui o primeiro fluxo real local:
 - ação para abrir a pasta do jogo no Explorer;
 - validações de caminho, extensão e execução sem shell.
 
-Ainda não há SQLite, scanner incremental avançado, metadados reais, download de capas, backend cloud, monitoramento automático de encerramento do emulador ou suporte real a PS3. A biblioteca, perfis e sessões permanecem em `localStorage` nesta versão.
+Ainda não há scanner incremental avançado, cache local de capas, backend cloud, monitoramento automático de encerramento do emulador ou suporte real a PS3. Preferências de interface e execução permanecem no armazenamento local do WebView; catálogo e sessões usam SQLite.
 
 ## Stack
 
@@ -48,7 +49,7 @@ Ainda não há SQLite, scanner incremental avançado, metadados reais, download 
 | Build        | Vite                          | ambiente de desenvolvimento e bundle web   |
 | Estilo       | Tailwind CSS 4                | design system e layout responsivo          |
 | Nativo       | Rust                          | scanner local e launcher seguro            |
-| Persistência | SQLite futuro                 | biblioteca, configurações e sessões locais |
+| Persistência | SQLite + `rusqlite`           | catálogo, estado e sessões locais          |
 
 ## Como rodar localmente
 
@@ -103,7 +104,7 @@ npm run dev:web
 
 2. Mantenha **Detectar jogos automaticamente** ligado.
 3. Abra a **Biblioteca**. O Arcadium passa a monitorar a pasta e reflete adições e remoções automaticamente.
-4. Se precisar reconstruir o índice, use **Importação manual** para forçar uma sincronização.
+4. Se precisar reconstruir o índice, use **Importar** para forçar uma sincronização.
 5. Confirme o caminho do PCSX2, por exemplo:
 
    ```text
@@ -132,6 +133,9 @@ O Arcadium foi ajustado para manter uma superfície segura nesta etapa:
 - limita e sanitiza títulos antes das consultas;
 - aplica CSP para restringir conexões e conteúdo remoto do webview;
 - consulta apenas o título e a plataforma do jogo; caminhos locais nunca são enviados à RAWG.
+- usa consultas SQL parametrizadas e transações no backend Rust, sem expor SQL arbitrário ao frontend;
+- valida tamanho, plataforma e campos dos registros antes da persistência;
+- habilita chaves estrangeiras e verificação rápida de integridade do banco.
 
 ## Compatibilidade após o rebranding
 
@@ -140,7 +144,20 @@ existem, o aplicativo copia automaticamente os valores das chaves legadas `ludex
 origem. A biblioteca, as configurações, os perfis de inicialização e as sessões existentes são
 preservados. Antes de criar a janela, o backend também copia dados ausentes do diretório legado
 `com.ludex.desktop` para `com.arcadium.app`, ignorando links simbólicos e sem sobrescrever arquivos.
-As referências antigas permanecem no código exclusivamente para essa migração compatível.
+As referências antigas permanecem no código exclusivamente para essa migração compatível. Na
+v0.6.3, catálogo, estado da biblioteca e sessões também são importados uma única vez para o SQLite;
+as chaves antigas correspondentes só são removidas depois que a transação termina com sucesso.
+
+## Persistência SQLite
+
+O banco `arcadium.db` é criado no diretório privado de dados locais do aplicativo. As ISOs não são
+copiadas para o banco: continuam na pasta escolhida pelo usuário, e o Arcadium persiste apenas o
+catálogo organizado, metadados, favoritos, estado de sincronização e sessões.
+
+A conexão usa WAL para leituras responsivas durante gravações, `foreign_keys` para manter relações
+válidas, `busy_timeout` para lidar com contenção curta, `synchronous = NORMAL` e `PRAGMA optimize`.
+As tabelas `app_state` e `metadata_cache` deixam a arquitetura pronta para novos estados versionados
+e cache de providers com expiração. Toda escrita é limitada, validada, parametrizada e transacional.
 
 ## Metadados IGDB e RAWG
 
@@ -156,9 +173,9 @@ Consulte os termos e a documentação oficial da [IGDB](https://api-docs.igdb.co
 ## Estratégia de mídia RAWG + IGDB
 
 - **IGDB** é a fonte preferencial para capa vertical e referências externas de vídeo;
-- **RAWG** permanece como fonte principal de descrição, gêneros, empresas, avaliações, background e screenshots;
+- **RAWG** permanece como fonte principal de screenshots e fallback dos demais campos;
 - dados válidos já persistidos nunca são apagados quando um provider falha;
-- a biblioteca continua disponível offline usando o cache em `localStorage`;
+- a biblioteca continua disponível offline usando o catálogo em SQLite;
 - vídeos são abertos externamente no YouTube, sem download, hospedagem ou autoplay;
 - o token de aplicativo Twitch fica apenas em memória, expira e é renovado automaticamente;
 - credenciais em aplicativos desktop não são um cofre absoluto: mantenha seu `.env` privado e use credenciais dedicadas ao desenvolvimento.
@@ -301,9 +318,19 @@ Ficam fora do MVP: PS1, sincronização cloud, download automático de ROMs/ISOs
 - [x] reproduzir vídeos do YouTube dentro do Arcadium;
 - [x] restringir embeds a IDs válidos e ao domínio `youtube-nocookie.com` via CSP.
 
+### v0.6.3 — Persistência SQLite
+
+- [x] atualizar a logo horizontal com enquadramento mais limpo;
+- [x] persistir catálogo, estado da biblioteca e sessões em SQLite nativo;
+- [x] migrar automaticamente dados legados do `localStorage` em uma transação;
+- [x] preservar sessões ao atualizar ou remover itens do catálogo;
+- [x] habilitar WAL, chaves estrangeiras, timeout de contenção e otimização segura;
+- [x] adicionar índices para plataforma, título, favoritos, atividade e cache de metadados;
+- [x] exibir integridade, tamanho e estatísticas do banco nas configurações;
+- [x] permitir otimização manual sem expor comandos SQL à interface.
+
 ### Próximas versões
 
-- [ ] SQLite para biblioteca e configurações;
 - [ ] deduplicação avançada de `.bin/.cue`;
 - [ ] monitoramento automático do processo do emulador;
 - [ ] cache local de capas e metadados;
@@ -319,6 +346,7 @@ Arcadium/
 │   ├── app/                    # raiz e estilos globais
 │   ├── components/             # componentes reutilizáveis
 │   ├── features/
+│   │   ├── database/           # ponte tipada para a persistência SQLite
 │   │   ├── games/              # catálogo, serviço e hook
 │   │   ├── emulators/          # adapters e launcher frontend
 │   │   ├── library-scanner/    # contrato e serviço do scanner
@@ -332,6 +360,7 @@ Arcadium/
     ├── capabilities/           # permissões Tauri
     └── src/
         ├── commands/           # API entre frontend e Rust
+        ├── database/           # schema, migrações e commands SQLite
         ├── scanner/            # leitura segura do filesystem
         └── launcher/           # execução segura de emuladores
 ```

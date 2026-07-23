@@ -1,63 +1,25 @@
 import type { Game, PlaySession } from "@/types/domain";
-import { readMigratedStorage } from "@/lib/storage-migration";
+import { databaseService } from "@/features/database/database.service";
 
 export interface ActivePlaySession extends PlaySession {
   processId?: number;
 }
 
-const playSessionsStorageKey = "arcadium.playSessions.v1";
-const activePlaySessionStorageKey = "arcadium.playSessions.active.v1";
-const legacyPlaySessionsStorageKeys = ["ludex.playSessions.v1"];
-const legacyActivePlaySessionStorageKeys = ["ludex.playSessions.active.v1"];
-
-const readSessions = (): PlaySession[] => {
-  const rawValue = readMigratedStorage(playSessionsStorageKey, legacyPlaySessionsStorageKeys);
-  if (!rawValue) return [];
-
-  try {
-    const parsedValue = JSON.parse(rawValue);
-    return Array.isArray(parsedValue) ? (parsedValue as PlaySession[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeSessions = (sessions: PlaySession[]) => {
-  window.localStorage.setItem(playSessionsStorageKey, JSON.stringify(sessions));
-};
-
-const readActiveSessions = (): ActivePlaySession[] => {
-  const rawValue = readMigratedStorage(
-    activePlaySessionStorageKey,
-    legacyActivePlaySessionStorageKeys,
-  );
-  if (!rawValue) return [];
-
-  try {
-    const parsedValue = JSON.parse(rawValue);
-    return Array.isArray(parsedValue) ? (parsedValue as ActivePlaySession[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeActiveSessions = (sessions: ActivePlaySession[]) => {
-  window.localStorage.setItem(activePlaySessionStorageKey, JSON.stringify(sessions));
-};
-
 export const playSessionsService = {
   async listForGame(gameId: string): Promise<PlaySession[]> {
-    return readSessions()
+    return (await databaseService.listSessions(false))
       .filter((session) => session.gameId === gameId)
       .sort((left, right) => right.startedAt.localeCompare(left.startedAt));
   },
 
   async getActiveForGame(gameId: string): Promise<ActivePlaySession | undefined> {
-    return readActiveSessions().find((session) => session.gameId === gameId);
+    return (await databaseService.listSessions(true)).find((session) => session.gameId === gameId);
   },
 
   async start(game: Game, emulatorId: string, processId?: number): Promise<ActivePlaySession> {
-    const activeSessions = readActiveSessions().filter((session) => session.gameId !== game.id);
+    const activeSessions = (await databaseService.listSessions(true)).filter(
+      (session) => session.gameId !== game.id,
+    );
     const session: ActivePlaySession = {
       id: `session-${crypto.randomUUID()}`,
       gameId: game.id,
@@ -66,13 +28,13 @@ export const playSessionsService = {
       processId,
     };
 
-    writeActiveSessions([session, ...activeSessions]);
+    await databaseService.replaceSessions([session, ...activeSessions], true);
 
     return session;
   },
 
   async finish(gameId: string): Promise<PlaySession | undefined> {
-    const activeSessions = readActiveSessions();
+    const activeSessions = await databaseService.listSessions(true);
     const activeSession = activeSessions.find((session) => session.gameId === gameId);
     if (!activeSession) return undefined;
 
@@ -89,8 +51,12 @@ export const playSessionsService = {
       durationSeconds,
     };
 
-    writeActiveSessions(activeSessions.filter((session) => session.gameId !== gameId));
-    writeSessions([finishedSession, ...readSessions()].slice(0, 250));
+    const sessions = await databaseService.listSessions(false);
+    await databaseService.replaceSessions([finishedSession, ...sessions].slice(0, 250), false);
+    await databaseService.replaceSessions(
+      activeSessions.filter((session) => session.gameId !== gameId),
+      true,
+    );
 
     return finishedSession;
   },

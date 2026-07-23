@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
+import { databaseService, type DatabaseInfo } from "@/features/database/database.service";
 import { gamesService, type LibraryState } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 import { nativeDialogs } from "@/lib/native-dialogs";
@@ -26,17 +27,26 @@ const sections = [
   { id: "general", label: "Geral", icon: Globe2 },
 ];
 
+const formatStorageSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 export function Settings() {
   const [settings, setSettings] = useState<AppSettings>();
   const [libraryState, setLibraryState] = useState<LibraryState>({ totalGames: 0 });
+  const [databaseInfo, setDatabaseInfo] = useState<DatabaseInfo>();
   const [activeSection, setActiveSection] = useState("library");
   const [saved, setSaved] = useState(false);
   const [libraryCleared, setLibraryCleared] = useState(false);
+  const [databaseOptimized, setDatabaseOptimized] = useState(false);
   const [isClearLibraryDialogOpen, setIsClearLibraryDialogOpen] = useState(false);
 
   useEffect(() => {
     void settingsService.get().then(setSettings);
     void gamesService.getLibraryState().then(setLibraryState);
+    void databaseService.info().then(setDatabaseInfo);
   }, []);
 
   async function handleSave() {
@@ -55,9 +65,16 @@ export function Settings() {
   async function handleClearLibrary() {
     await gamesService.clear();
     setLibraryState({ totalGames: 0 });
+    setDatabaseInfo(await databaseService.info());
     setIsClearLibraryDialogOpen(false);
     setLibraryCleared(true);
     window.setTimeout(() => setLibraryCleared(false), 1800);
+  }
+
+  async function handleOptimizeDatabase() {
+    setDatabaseInfo(await databaseService.optimize());
+    setDatabaseOptimized(true);
+    window.setTimeout(() => setDatabaseOptimized(false), 1800);
   }
 
   async function handlePickLibraryFolder() {
@@ -229,25 +246,66 @@ export function Settings() {
                         <Database size={19} />
                       </span>
                       <div>
-                        <h2 className="text-base font-semibold text-white">
-                          Manutenção da biblioteca
-                        </h2>
+                        <h2 className="text-base font-semibold text-white">Banco local</h2>
                         <p className="mt-1 text-xs text-zinc-600">
-                          {libraryState.totalGames === 1
-                            ? "1 jogo no índice local."
-                            : `${libraryState.totalGames} jogos no índice local.`}
+                          SQLite armazena o catálogo e as sessões. Suas ISOs permanecem intactas.
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsClearLibraryDialogOpen(true)}
-                      disabled={libraryState.totalGames === 0}
-                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-rose-300/15 bg-rose-400/[0.07] px-4 text-xs font-semibold whitespace-nowrap text-rose-100/80 hover:bg-rose-400/[0.11] disabled:cursor-not-allowed disabled:opacity-45 sm:self-auto"
-                    >
-                      {libraryCleared ? <Check size={16} /> : <Trash2 size={16} />}
-                      {libraryCleared ? "Índice limpo" : "Limpar índice"}
-                    </button>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-white/[0.06] bg-black/10 p-3.5">
+                      <p className="text-[9px] font-semibold tracking-wider text-zinc-600 uppercase">
+                        Catálogo
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-zinc-300">
+                        {databaseInfo?.gameCount ?? libraryState.totalGames} jogos
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-white/[0.06] bg-black/10 p-3.5">
+                      <p className="text-[9px] font-semibold tracking-wider text-zinc-600 uppercase">
+                        Sessões
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-zinc-300">
+                        {databaseInfo?.sessionCount ?? 0} registradas
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-white/[0.06] bg-black/10 p-3.5">
+                      <p className="text-[9px] font-semibold tracking-wider text-zinc-600 uppercase">
+                        Banco
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-zinc-300">
+                        {databaseInfo
+                          ? `${databaseInfo.journalMode.toUpperCase()} · ${formatStorageSize(databaseInfo.sizeBytes)}`
+                          : "Carregando"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[10px] text-zinc-600">
+                      {databaseInfo?.integrityStatus === "ok"
+                        ? `Integridade verificada · esquema ${databaseInfo.schemaVersion}`
+                        : "Verificando integridade do banco local"}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleOptimizeDatabase()}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-xs font-semibold text-zinc-400 hover:text-white"
+                      >
+                        {databaseOptimized ? <Check size={15} /> : <Database size={15} />}
+                        {databaseOptimized ? "Otimizado" : "Otimizar"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsClearLibraryDialogOpen(true)}
+                        disabled={libraryState.totalGames === 0}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-300/15 bg-rose-400/[0.07] px-4 text-xs font-semibold whitespace-nowrap text-rose-100/80 hover:bg-rose-400/[0.11] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {libraryCleared ? <Check size={15} /> : <Trash2 size={15} />}
+                        {libraryCleared ? "Índice limpo" : "Limpar índice"}
+                      </button>
+                    </div>
                   </div>
                 </section>
               </div>

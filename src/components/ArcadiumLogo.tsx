@@ -24,7 +24,7 @@ export function ArcadiumLogo({ compact = false, className }: ArcadiumLogoProps) 
       <img
         src="/arcadium-logo.png"
         alt="Arcadium"
-        className="absolute -top-[31px] -left-[8px] w-[204px] max-w-none"
+        className="absolute -top-[33px] -left-[9px] w-[212px] max-w-none"
       />
     </div>
   );
