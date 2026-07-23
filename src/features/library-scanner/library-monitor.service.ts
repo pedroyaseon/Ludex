@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { databaseService } from "@/features/database/database.service";
 import { gamesService } from "@/features/games/games.service";
 import { settingsService } from "@/features/settings/settings.service";
 
@@ -72,6 +73,9 @@ export const libraryMonitorService = {
       notifyStatus("watching");
       await sync();
     };
+
+    await databaseService.migrateLegacyStorage();
+    notifyLibraryUpdated();
 
     const unlisten: UnlistenFn = await listen("library://changed", () => {
       window.clearTimeout(debounceTimer);

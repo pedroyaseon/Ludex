@@ -1,4 +1,5 @@
 mod commands;
+mod database;
 mod launcher;
 mod metadata;
 mod native_dialogs;
@@ -53,11 +54,25 @@ pub fn run() {
         .manage(metadata::igdb::IgdbState::default())
         .setup(|app| {
             migrate_legacy_app_data(app);
+            let database = database::initialize(app.handle()).map_err(io::Error::other)?;
+            app.manage(database);
             tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?.build()?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::health_check,
+            database::database_list_games,
+            database::database_get_game,
+            database::database_replace_games,
+            database::database_upsert_game,
+            database::database_list_sessions,
+            database::database_replace_sessions,
+            database::database_get_library_state,
+            database::database_set_library_state,
+            database::database_clear_library,
+            database::database_migrate_legacy,
+            database::database_info,
+            database::database_optimize,
             scanner::scan_library_folder,
             scanner::watch_library_folder,
             launcher::launch_game,
